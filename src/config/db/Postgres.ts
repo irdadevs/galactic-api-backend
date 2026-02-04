@@ -5,8 +5,8 @@ import type {
   QueryResult,
   QueryResultRow,
 } from "./Queryable";
-import { SharedErrorFactory } from "../../shared/domain/errors/Error.map";
-import { CONSOLE_COLORS } from "../../shared/infrastructure/utils/Chalk";
+import { SharedErrorFactory } from "../../utils/Error.map";
+import { CONSOLE_COLORS } from "../../utils/Chalk";
 
 export const __PG_POOL = Symbol("__pg_pool");
 export function getPgPool(q: Queryable): Pool | null {
@@ -34,11 +34,14 @@ export type Logger = {
 // src/platform/db/Postgres.ts
 
 class PgPoolQueryable implements Queryable {
-  constructor(private pool: Pool, private log?: Logger) {}
+  constructor(
+    private pool: Pool,
+    private log?: Logger,
+  ) {}
 
   async query<T extends QueryResultRow = QueryResultRow>(
     sql: string,
-    params?: QueryParams
+    params?: QueryParams,
   ): Promise<QueryResult<T>> {
     const res = await this.pool.query(sql as any, params as any);
     const rows = Array.isArray((res as any)?.rows)
@@ -79,11 +82,14 @@ class PgPoolQueryable implements Queryable {
 }
 
 class PgClientQueryable implements Queryable {
-  constructor(private client: PoolClient, private log?: Logger) {}
+  constructor(
+    private client: PoolClient,
+    private log?: Logger,
+  ) {}
 
   async query<T extends QueryResultRow = QueryResultRow>(
     sql: string,
-    params?: QueryParams
+    params?: QueryParams,
   ): Promise<QueryResult<T>> {
     const res = await this.client.query(sql as any, params as any);
     const rows = Array.isArray((res as any)?.rows)
@@ -124,7 +130,7 @@ class PgClientQueryable implements Queryable {
 export async function connectDb(
   cfg: PgConfig,
   log?: Logger,
-  maxAttempts = 5
+  maxAttempts = 5,
 ): Promise<Queryable> {
   const pool = new Pool(cfg);
 
@@ -145,8 +151,8 @@ export async function connectDb(
         `✅${CONSOLE_COLORS.labelColor("[db]")} ${CONSOLE_COLORS.successColor(
           `connected (attempt ${attempt}, ${Date.now() - start}ms at port ${
             cfg.port
-          }).`
-        )}`
+          }).`,
+        )}`,
       );
       break;
     } catch (err) {
@@ -154,14 +160,14 @@ export async function connectDb(
         `⚠️ ${CONSOLE_COLORS.labelColor("[db]")} ${CONSOLE_COLORS.warningColor(
           `connection attempt ${attempt} failed: ${
             (err as any)?.message ?? err
-          }`
-        )}`
+          }`,
+        )}`,
       );
       if (attempt >= maxAttempts) {
         log?.error?.(
           `🔥${CONSOLE_COLORS.labelColor("[db]")} ${CONSOLE_COLORS.errorColor(
-            `giving up after max attempts`
-          )}`
+            `giving up after max attempts`,
+          )}`,
         );
         await pool.end().catch(() => {});
         throw SharedErrorFactory.infra("SHARED.DATABASE_CONNECTION");
