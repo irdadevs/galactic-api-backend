@@ -5,8 +5,8 @@ import Express from "express";
 import cors from "cors";
 import morgan from "morgan";
 
-import { PgPoolQueryable } from "./infra/Postgres";
-import { PgUnitOfWorkFactory } from "./infra/PostgresUoW";
+import { PgPoolQueryable } from "./infra/db/Postgres";
+import { PgUnitOfWorkFactory } from "./infra/db/PostgresUoW";
 import { RedisAdapter } from "./infra/RedisAdapter";
 import { CONSOLE_COLORS } from "./utils/Chalk";
 

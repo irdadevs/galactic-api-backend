@@ -5,9 +5,9 @@ import type {
   QueryResult,
   QueryResultRow,
   PgConfig,
-} from "../config/db/Queryable";
-import { SharedErrorFactory } from "../utils/errors/Error.map";
-import { CONSOLE_COLORS } from "../utils/Chalk";
+} from "../../config/db/Queryable";
+import { SharedErrorFactory } from "../../utils/errors/Error.map";
+import { CONSOLE_COLORS } from "../../utils/Chalk";
 
 export type Logger = {
   info: (...a: any[]) => void;

@@ -4,8 +4,8 @@ import type {
   QueryResultRow,
   QueryResult,
   QueryParams,
-} from "../config/db/Queryable";
-import type { UnitOfWork, UnitOfWorkFactory } from "../config/db/UnitOfWork";
+} from "../../config/db/Queryable";
+import type { UnitOfWork, UnitOfWorkFactory } from "../../config/db/UnitOfWork";
 
 class PgClientQueryable implements Queryable {
   constructor(private client: PoolClient) {}

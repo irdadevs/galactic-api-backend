@@ -1,5 +1,5 @@
-import type { Queryable, QueryResultRow } from "../config/db/Queryable";
-import { SharedErrorFactory } from "../utils/errors/Error.map";
+import type { Queryable, QueryResultRow } from "../../config/db/Queryable";
+import { SharedErrorFactory } from "../../utils/errors/Error.map";
 
 export type OrderDir = "asc" | "desc";
 
