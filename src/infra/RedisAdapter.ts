@@ -1,6 +1,6 @@
 import { createClient, RedisClientType } from "redis";
-import { Cache, DEFAULT_TTL } from "./Cache";
-import { CONSOLE_COLORS } from "../../shared/infrastructure/utils/Chalk";
+import { Cache, DEFAULT_TTL } from "../config/cache/Cache";
+import { CONSOLE_COLORS } from "../utils/Chalk";
 
 export type RedisOptions = {
   url?: string; // e.g. redis://localhost:6379
@@ -9,7 +9,7 @@ export type RedisOptions = {
   keyPrefix?: string; // multi-tenant, env, etc.
 };
 
-export class CacheAdapter implements Cache {
+export class RedisAdapter implements Cache {
   private client: RedisClientType;
   private prefix: string;
 
@@ -43,10 +43,8 @@ export class CacheAdapter implements Cache {
     const raw = await this.client.get(this.k(key));
     if (!raw) return null;
     try {
-      await this.close();
       return JSON.parse(raw) as T;
     } catch {
-      await this.close();
       return null;
     }
   }
@@ -58,13 +56,11 @@ export class CacheAdapter implements Cache {
   ): Promise<void> {
     await this.connect();
     await this.client.set(this.k(key), JSON.stringify(value), { EX: ttlSec });
-    await this.close();
   }
 
   async del(key: string): Promise<void> {
     await this.connect();
     await this.client.del(this.k(key));
-    await this.close();
   }
 
   async close(): Promise<void> {

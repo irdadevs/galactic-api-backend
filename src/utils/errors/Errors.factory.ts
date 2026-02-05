@@ -96,21 +96,5 @@ export function createErrorFactory<M extends ErrorMap>(
         "Presentation Layer",
       );
     },
-    platform(
-      code: ErrorCode<M>,
-      meta?: Record<string, unknown>,
-      cause?: unknown,
-    ) {
-      const { def, messageTpl } = resolve(code);
-      return new PlatformError(
-        def.code,
-        formatMessage(messageTpl, meta),
-        meta,
-        cause,
-        def.httpCode,
-        def.retryable,
-        "Infrastructure Layer",
-      );
-    },
   };
 }

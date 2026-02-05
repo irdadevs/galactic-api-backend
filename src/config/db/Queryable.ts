@@ -7,15 +7,24 @@ export interface QueryResult<T extends QueryResultRow = QueryResultRow> {
   rowCount: number;
 }
 
+export type PgConfig = {
+  connectionString?: string;
+  host?: string;
+  port?: number;
+  user?: string;
+  password?: string;
+  database?: string;
+  ssl?: boolean | { rejectUnauthorized?: boolean };
+  max?: number; // pool size
+  idleTimeoutMillis?: number;
+};
+
 export interface Queryable {
   /** Simple parameterized query */
   query<T extends QueryResultRow = QueryResultRow>(
     sql: string,
-    params?: QueryParams
+    params?: QueryParams,
   ): Promise<QueryResult<T>>;
-
-  /** Run a transaction; all queries inside share the same client */
-  tx<R>(fn: (q: Queryable) => Promise<R>): Promise<R>;
 
   /** Quick health check */
   ping(): Promise<void>;
