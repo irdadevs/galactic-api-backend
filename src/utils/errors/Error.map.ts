@@ -101,6 +101,11 @@ export const SharedErrorMap = {
     httpCode: 500,
     retryable: false,
   },
+  ORDER_MAP_EMPTY: {
+    code: "SHARED.ORDER_MAP_EMPTY",
+    httpCode: 500,
+    retryable: false,
+  },
 } as const satisfies Record<string, ErrorDef>;
 
 export type SharedError = (typeof SharedErrorMap)[keyof typeof SharedErrorMap];
@@ -144,9 +149,10 @@ export const SharedErrorMessages: Record<SharedErrorCode, string> = {
     "Database Pool not available for Unit Of Work. Null returned.",
   [SharedErrorMap.TRANSACTION_FAILED.code]:
     "Atomic database transaction failed. Cause: \n${cause}",
+  [SharedErrorMap.ORDER_MAP_EMPTY.code]: "Order map need at least one entry.",
 };
 
 export const SharedErrorFactory = createErrorFactory(
   SharedErrorMap,
-  SharedErrorMessages
+  SharedErrorMessages,
 );

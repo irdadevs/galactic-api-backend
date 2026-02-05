@@ -8,6 +8,7 @@ import morgan from "morgan";
 import { PgPoolQueryable } from "./infra/Postgres";
 import { PgUnitOfWorkFactory } from "./infra/PostgresUoW";
 import { RedisAdapter } from "./infra/RedisAdapter";
+import { CONSOLE_COLORS } from "./utils/Chalk";
 
 const app = Express();
 
@@ -46,16 +47,22 @@ const server = app.listen(PORT, async () => {
     cache = new RedisAdapter({
       keyPrefix: ENVIRONMENT,
     });
-
-    console.log(`🚀 Server listening on port ${PORT}`);
-  } catch (err) {
-    console.error("🔥 Failed to start server", err);
+    `✅${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.successColor(
+      `🚀 Server listening on port ${PORT}.`,
+    )}`;
+  } catch (e) {
+    `❌${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
+      `Failed to start server. ${e}.`,
+    )}`;
     process.exit(1);
   }
 });
 
 // ---- graceful shutdown ----
 const shutdown = async (signal: string) => {
+  `⚠️${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.warningColor(
+    `🛑 ${signal} received. Shutting down...`,
+  )}`;
   console.log(`\n🛑 ${signal} received. Shutting down…`);
 
   server.close(async () => {
@@ -63,10 +70,14 @@ const shutdown = async (signal: string) => {
       await cache?.close();
       await postgres?.close();
 
-      console.log("✅ Graceful shutdown complete");
+      `✅${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.successColor(
+        `Graceful shutdown complete.`,
+      )}`;
       process.exit(0);
     } catch (e) {
-      console.error("❌ Error during shutdown", e);
+      `❌${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
+        `Error during shutdown. ${e}`,
+      )}`;
       process.exit(1);
     }
   });

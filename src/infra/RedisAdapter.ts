@@ -21,14 +21,16 @@ export class RedisAdapter implements Cache {
     });
     this.prefix = opts.keyPrefix ? `${opts.keyPrefix}:` : "";
     this.client.on("error", (e) => {
-      console.error("[redis] error", e);
+      console.log(
+        `${CONSOLE_COLORS.labelColor("[❌redis]")} ${CONSOLE_COLORS.errorColor(`error. ${e}`)}`,
+      );
     });
   }
 
   async connect() {
     if (!this.client.isOpen) {
       console.log(
-        `🛜 ${CONSOLE_COLORS.labelColor("[cache:client]")} cache client ready.`,
+        `🛜 ${CONSOLE_COLORS.labelColor("[⚙️redis]")} ${CONSOLE_COLORS.successColor(`cache client ready.`)}`,
       );
       await this.client.connect();
     }
@@ -66,9 +68,9 @@ export class RedisAdapter implements Cache {
   async close(): Promise<void> {
     if (this.client.isOpen) {
       console.log(
-        `🛜 ${CONSOLE_COLORS.warningColor(
-          "[cache:client]",
-        )} cache client connection closed.`,
+        `🛜 ${CONSOLE_COLORS.labelColor(
+          "[⚙️redis]",
+        )} ${CONSOLE_COLORS.warningColor(`cache client connection closed.`)}`,
       );
       await this.client.quit();
     }

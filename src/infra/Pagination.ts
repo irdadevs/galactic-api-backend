@@ -1,4 +1,5 @@
-import type { Queryable, QueryResultRow } from "./Queryable";
+import type { Queryable, QueryResultRow } from "../config/db/Queryable";
+import { SharedErrorFactory } from "../utils/errors/Error.map";
 
 export type OrderDir = "asc" | "desc";
 
@@ -29,12 +30,12 @@ export async function paginateFrom<T extends QueryResultRow = QueryResultRow>(
   db: Queryable,
   fromSql: string, // e.g. "FROM users WHERE business_id = $1 AND deleted_at IS NULL"
   params: any[],
-  opts: SimplePaginateOpts
+  opts: SimplePaginateOpts,
 ): Promise<{ rows: T[]; total: number }> {
   const select = opts.select ?? "*";
   const keys = Object.keys(opts.orderMap);
   if (keys.length === 0)
-    throw new Error("orderMap must have at least one entry");
+    throw SharedErrorFactory.infra("SHARED.ORDER_MAP_EMPTY");
 
   const orderKey =
     opts.orderBy && opts.orderMap[opts.orderBy] ? opts.orderBy : keys[0];
