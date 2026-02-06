@@ -156,3 +156,43 @@ export const SharedErrorFactory = createErrorFactory(
   SharedErrorMap,
   SharedErrorMessages,
 );
+
+export const DomainErrorMap = {
+  INVALID_USER_ID: {
+    code: "DOMAIN.INVALID_USER_ID",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_USER_EMAIL: {
+    code: "DOMAIN.INVALID_USER_EMAIL",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_USER_PASSWORD: {
+    code: "DOMAIN.INVALID_USER_PASSWORD",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_USER_ROLE: {
+    code: "DOMAIN.INVALID_USER_ROLE",
+    httpCode: 400,
+    retryable: false,
+  },
+} as const satisfies Record<string, ErrorDef>;
+
+export type DomainError = (typeof DomainErrorMap)[keyof typeof DomainErrorMap];
+export type DomainErrorCode = DomainError["code"];
+
+export const DomainErrorMessages: Record<DomainErrorCode, string> = {
+  [DomainErrorMap.INVALID_USER_ID.code]: "Invalid user UUID. Id: ${id}.",
+  [DomainErrorMap.INVALID_USER_EMAIL.code]:
+    "Invalid user email. Email: ${email}.",
+  [DomainErrorMap.INVALID_USER_PASSWORD.code]:
+    "Invalid user password hash. Hash: ${password}.",
+  [DomainErrorMap.INVALID_USER_ROLE.code]: "Invalid user role. Role: ${role}.",
+};
+
+export const DomainErrorFactory = createErrorFactory(
+  DomainErrorMap,
+  DomainErrorMessages,
+);
