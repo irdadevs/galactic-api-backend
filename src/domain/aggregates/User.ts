@@ -1,6 +1,5 @@
 import { randomUUID } from "crypto";
 import { UserRole } from "../../../types/users.types";
-import { DomainError } from "../../utils/errors/Errors.base";
 import { DomainErrorFactory } from "../../utils/errors/Error.map";
 import { REGEXP } from "../../utils/Regexp";
 
