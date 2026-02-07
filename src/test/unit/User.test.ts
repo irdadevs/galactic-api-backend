@@ -1,4 +1,4 @@
-import { User, UserId } from "../../domain/aggregates/User";
+import { User, Uuid } from "../../domain/aggregates/User";
 
 const validInput = {
   email: "test@example.com",
@@ -23,7 +23,7 @@ describe("User aggregate", () => {
   it("creates a user with defaults", () => {
     const user = User.create(validInput);
 
-    expect(UserId.isValid(user.id)).toBe(true);
+    expect(Uuid.isValid(user.id)).toBe(true);
     expect(user.email).toBe(validInput.email);
     expect(user.passwordHash).toBe(validInput.passwordHash);
     expect(user.isVerified).toBe(false);
