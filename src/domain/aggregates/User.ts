@@ -1,10 +1,10 @@
 import { randomUUID } from "crypto";
-import { UserRole } from "../../../types/users.types";
+import { UserRole } from "../../../types/User.types";
 import { DomainErrorFactory } from "../../utils/errors/Error.map";
 import { REGEXP } from "../../utils/Regexp";
 
 export type UserProps = {
-  id: UserId;
+  id: Uuid;
   email: Email;
   passwordHash: PasswordHash;
   isVerified: boolean;
@@ -30,28 +30,28 @@ export type UserDTO = {
   role: UserRole;
 };
 
-export class UserId {
+export class Uuid {
   private constructor(private readonly value: string) {}
 
-  static create(value?: string): UserId {
+  static create(value?: string): Uuid {
     const id = value ?? randomUUID();
-    if (!UserId.isValid(id)) {
+    if (!Uuid.isValid(id)) {
       throw DomainErrorFactory.domain("DOMAIN.INVALID_USER_ID", {
         id,
       });
     }
-    return new UserId(id);
+    return new Uuid(id);
   }
 
   static isValid(value: string): boolean {
-    return REGEXP.userId.test(value);
+    return REGEXP.uuid.test(value);
   }
 
   toString(): string {
     return this.value;
   }
 
-  equals(other: UserId): boolean {
+  equals(other: Uuid): boolean {
     return this.value === other.value;
   }
 }
@@ -127,7 +127,7 @@ export class User {
   static create(input: UserCreateProps): User {
     const now = new Date();
     const user = new User({
-      id: UserId.create(input.id),
+      id: Uuid.create(input.id),
       email: Email.create(input.email),
       passwordHash: PasswordHash.create(input.passwordHash),
       isVerified: input.isVerified ?? false,
@@ -147,7 +147,7 @@ export class User {
     role: UserRole;
   }): User {
     return new User({
-      id: UserId.create(props.id),
+      id: Uuid.create(props.id),
       email: Email.create(props.email),
       passwordHash: PasswordHash.create(props.passwordHash),
       isVerified: props.isVerified,

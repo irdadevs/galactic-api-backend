@@ -178,6 +178,16 @@ export const DomainErrorMap = {
     httpCode: 400,
     retryable: false,
   },
+  INVALID_GALAXY_NAME: {
+    code: "DOMAIN.INVALID_GALAXY_NAME",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_GALAXY_SHAPE: {
+    code: "DOMAIN.INVALID_GALAXY_SHAPE",
+    httpCode: 400,
+    retryable: false,
+  },
 } as const satisfies Record<string, ErrorDef>;
 
 export type DomainError = (typeof DomainErrorMap)[keyof typeof DomainErrorMap];
@@ -190,6 +200,10 @@ export const DomainErrorMessages: Record<DomainErrorCode, string> = {
   [DomainErrorMap.INVALID_USER_PASSWORD.code]:
     "Invalid user password hash. Hash: ${password}.",
   [DomainErrorMap.INVALID_USER_ROLE.code]: "Invalid user role. Role: ${role}.",
+  [DomainErrorMap.INVALID_GALAXY_NAME.code]:
+    "Invalid galaxy name. Name: ${name}.",
+  [DomainErrorMap.INVALID_GALAXY_SHAPE.code]:
+    "Invalid galaxy shape. Shape: ${shape}.",
 };
 
 export const DomainErrorFactory = createErrorFactory(
