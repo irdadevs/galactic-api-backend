@@ -35,7 +35,9 @@ const ALLOWED_GALAXY_SHAPES = [
   "3-arm spiral",
   "5-arm spiral",
   "irregular",
-];
+] as const;
+
+export type GalaxyShapeValue = (typeof ALLOWED_GALAXY_SHAPES)[number];
 
 export class GalaxyName {
   private constructor(private readonly value: string) {}
@@ -61,20 +63,20 @@ export class GalaxyName {
 }
 
 export class GalaxyShape {
-  private constructor(private readonly value: string) {}
+  private constructor(private readonly value: GalaxyShapeValue) {}
 
   static create(value: string): GalaxyShape {
-    const valid = ALLOWED_GALAXY_SHAPES.includes(value);
+    const valid = ALLOWED_GALAXY_SHAPES.includes(value as GalaxyShapeValue);
     if (!valid) {
       throw DomainErrorFactory.domain("DOMAIN.INVALID_GALAXY_SHAPE", {
         shape: value,
       });
     }
 
-    return new GalaxyShape(value);
+    return new GalaxyShape(value as GalaxyShapeValue);
   }
 
-  toString(): string {
+  toString(): GalaxyShapeValue {
     return this.value;
   }
 
@@ -127,5 +129,82 @@ export class Galaxy {
       systemCount: props.systemCount,
       createdAt: props.createdAt,
     });
+  }
+
+  get id(): string {
+    return this.props.id.toString();
+  }
+
+  get ownerId(): string {
+    return this.props.ownerId.toString();
+  }
+
+  get name(): string {
+    return this.props.name.toString();
+  }
+
+  get shape(): GalaxyShapeValue {
+    return this.props.shape.toString();
+  }
+
+  get systemCount(): number {
+    return this.props.systemCount;
+  }
+
+  get createdAt(): Date {
+    return this.props.createdAt;
+  }
+
+  rename(value: string): void {
+    const next = GalaxyName.create(value);
+    if (next.equals(this.props.name)) {
+      return;
+    }
+    this.props.name = next;
+  }
+
+  changeShape(value: string): void {
+    const next = GalaxyShape.create(value);
+    if (next.equals(this.props.shape)) {
+      return;
+    }
+    this.props.shape = next;
+  }
+
+  changeSystemCount(value: number): void {
+    const normalized = value < 1 ? 1 : value;
+    if (normalized === this.props.systemCount) {
+      return;
+    }
+    this.props.systemCount = normalized;
+  }
+
+  toJSON(): {
+    id: string;
+    ownerId: string;
+    name: string;
+    shape: GalaxyShapeValue;
+    systemCount: number;
+    createdAt: Date;
+  } {
+    return {
+      id: this.id,
+      ownerId: this.ownerId,
+      name: this.name,
+      shape: this.shape,
+      systemCount: this.systemCount,
+      createdAt: this.createdAt,
+    };
+  }
+
+  toDB(): GalaxyDTO {
+    return {
+      id: this.id,
+      owner_id: this.ownerId,
+      name: this.name,
+      shape: this.shape,
+      system_count: this.systemCount,
+      created_at: this.createdAt,
+    };
   }
 }
