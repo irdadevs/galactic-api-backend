@@ -1,5 +1,6 @@
 import { Dice } from "../../utils/Dice.class";
 import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { generateCelestialName } from "../../utils/nameGenerator";
 import { REGEXP } from "../../utils/Regexp";
 import { Uuid } from "./User";
 
@@ -74,7 +75,7 @@ export type PlanetProps = {
 export type PlanetCreateProps = {
   id?: string;
   systemId: string;
-  name: string;
+  name?: string;
   type?: PlanetType;
   size?: PlanetSize;
   orbital: number;
@@ -243,7 +244,7 @@ export class Planet {
     return new Planet({
       id: Uuid.create(input.id),
       systemId: Uuid.create(input.systemId),
-      name: PlanetName.create(input.name),
+      name: PlanetName.create(input.name ?? generateCelestialName()),
       type: type.toString(),
       size: size.toString(),
       orbital: input.orbital,

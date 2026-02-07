@@ -1,5 +1,7 @@
 import { Dice } from "../../utils/Dice.class";
 import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { generateCelestialName } from "../../utils/nameGenerator";
+import { REGEXP } from "../../utils/Regexp";
 import { Uuid } from "./User";
 
 const ALLOWED_STAR_TYPES = [
@@ -88,6 +90,7 @@ export type StarColor = (typeof STAR_CLASS_COLOR)[StarClass];
 export type StarProps = {
   id: Uuid;
   systemId: Uuid;
+  name: StarName;
   starType: StarType;
   starClass: StarClass;
   surfaceTemperature: number;
@@ -105,6 +108,7 @@ export type StarProps = {
 export type StarCreateProps = {
   id?: string;
   systemId: string;
+  name?: string;
   starType?: StarType;
   starClass?: StarClass;
   surfaceTemperature?: number;
@@ -119,6 +123,7 @@ export type StarCreateProps = {
 export type StarDTO = {
   id: string;
   system_id: string;
+  name: string;
   star_type: StarType;
   star_class: StarClass;
   surface_temperature: number;
@@ -195,6 +200,28 @@ export class StarColorValue {
   }
 
   equals(other: StarColorValue): boolean {
+    return this.value === other.value;
+  }
+}
+
+export class StarName {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): StarName {
+    const normalized = value.trim();
+    if (!REGEXP.planetName.test(normalized)) {
+      throw DomainErrorFactory.domain("DOMAIN.INVALID_STAR_VALUE", {
+        field: "name",
+      });
+    }
+    return new StarName(normalized);
+  }
+
+  toString(): string {
+    return this.value;
+  }
+
+  equals(other: StarName): boolean {
     return this.value === other.value;
   }
 }
@@ -327,6 +354,7 @@ export class Star {
     return new Star({
       id: Uuid.create(input.id),
       systemId: Uuid.create(input.systemId),
+      name: StarName.create(input.name ?? generateCelestialName()),
       starType: starType.toString(),
       starClass: starClass.toString(),
       surfaceTemperature,
@@ -345,6 +373,7 @@ export class Star {
   static rehydrate(props: {
     id: string;
     systemId: string;
+    name: string;
     starType: StarType;
     starClass: StarClass;
     surfaceTemperature: number;
@@ -385,6 +414,7 @@ export class Star {
     return new Star({
       id: Uuid.create(props.id),
       systemId: Uuid.create(props.systemId),
+      name: StarName.create(props.name),
       starType: starType.toString(),
       starClass: starClass.toString(),
       surfaceTemperature: props.surfaceTemperature,
@@ -408,6 +438,10 @@ export class Star {
 
   get systemId(): string {
     return this.props.systemId.toString();
+  }
+
+  get name(): string {
+    return this.props.name.toString();
   }
 
   get starType(): StarType {
@@ -465,6 +499,14 @@ export class Star {
     this.props.isMain = value;
   }
 
+  rename(value: string): void {
+    const next = StarName.create(value);
+    if (next.equals(this.props.name)) {
+      return;
+    }
+    this.props.name = next;
+  }
+
   changeOrbital(value: number): void {
     ensureNonNegative("orbital", value);
     if (value === this.props.orbital) {
@@ -484,6 +526,7 @@ export class Star {
   toJSON(): {
     id: string;
     systemId: string;
+    name: string;
     starType: StarType;
     starClass: StarClass;
     surfaceTemperature: number;
@@ -500,6 +543,7 @@ export class Star {
     return {
       id: this.id,
       systemId: this.systemId,
+      name: this.name,
       starType: this.starType,
       starClass: this.starClass,
       surfaceTemperature: this.surfaceTemperature,
@@ -519,6 +563,7 @@ export class Star {
     return {
       id: this.id,
       system_id: this.systemId,
+      name: this.name,
       star_type: this.starType,
       star_class: this.starClass,
       surface_temperature: this.surfaceTemperature,

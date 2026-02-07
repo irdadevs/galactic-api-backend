@@ -2,6 +2,7 @@ import { Star } from "../../domain/aggregates/Star";
 
 const validInput = {
   systemId: "11111111-1111-4111-8111-111111111111",
+  name: "Sol",
 };
 
 const assertDomainErrorCode = (fn: () => void, code: string) => {
@@ -83,6 +84,7 @@ describe("Star aggregate", () => {
       starType: "Black hole",
       starClass: "BH",
       relativeMass: 10,
+      name: "AST-010",
     });
 
     expect(star.starClass).toBe("BH");
@@ -93,6 +95,7 @@ describe("Star aggregate", () => {
     const star = Star.rehydrate({
       id: "22222222-2222-4222-8222-222222222222",
       systemId: "33333333-3333-4333-8333-333333333333",
+      name: "Helios",
       starType: "Yellow dwarf",
       starClass: "G",
       surfaceTemperature: 5800,
@@ -109,6 +112,7 @@ describe("Star aggregate", () => {
 
     expect(star.id).toBe("22222222-2222-4222-8222-222222222222");
     expect(star.systemId).toBe("33333333-3333-4333-8333-333333333333");
+    expect(star.name).toBe("Helios");
     expect(star.starClass).toBe("G");
   });
 
@@ -120,6 +124,7 @@ describe("Star aggregate", () => {
     expect(dto).toEqual({
       id: star.id,
       system_id: star.systemId,
+      name: star.name,
       star_type: star.starType,
       star_class: star.starClass,
       surface_temperature: star.surfaceTemperature,

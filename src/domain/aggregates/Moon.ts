@@ -1,5 +1,6 @@
 import { Dice } from "../../utils/Dice.class";
 import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { generateCelestialName } from "../../utils/nameGenerator";
 import { REGEXP } from "../../utils/Regexp";
 import { Uuid } from "./User";
 
@@ -41,7 +42,7 @@ export type MoonProps = {
 export type MoonCreateProps = {
   id?: string;
   systemId: string;
-  name: string;
+  name?: string;
   size?: MoonSize;
   orbital: number;
   relativeMass?: number;
@@ -167,7 +168,7 @@ export class Moon {
     return new Moon({
       id: Uuid.create(input.id),
       systemId: Uuid.create(input.systemId),
-      name: MoonName.create(input.name),
+      name: MoonName.create(input.name ?? generateCelestialName()),
       size: size.toString(),
       orbital: input.orbital,
       relativeMass,

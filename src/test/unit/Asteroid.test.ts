@@ -2,7 +2,7 @@ import { Asteroid } from "../../domain/aggregates/Asteroid";
 
 const validInput = {
   systemId: "11111111-1111-4111-8111-111111111111",
-  name: "Ceres-1",
+  name: "AST-001",
   orbital: 1.5,
 };
 
@@ -78,9 +78,9 @@ describe("Asteroid aggregate", () => {
   it("renames when different", () => {
     const asteroid = Asteroid.create(validInput);
 
-    asteroid.rename("Vesta-2");
+    asteroid.rename("SOLAR-278");
 
-    expect(asteroid.name).toBe("Vesta-2");
+    expect(asteroid.name).toBe("SOLAR-278");
   });
 
   it("changes type when different", () => {
@@ -111,7 +111,7 @@ describe("Asteroid aggregate", () => {
     const asteroid = Asteroid.rehydrate({
       id: "22222222-2222-4222-8222-222222222222",
       systemId: "33333333-3333-4333-8333-333333333333",
-      name: "Vesta",
+      name: "AST-123",
       type: "single",
       size: "small",
       orbital: 3.5,
@@ -119,7 +119,7 @@ describe("Asteroid aggregate", () => {
 
     expect(asteroid.id).toBe("22222222-2222-4222-8222-222222222222");
     expect(asteroid.systemId).toBe("33333333-3333-4333-8333-333333333333");
-    expect(asteroid.name).toBe("Vesta");
+    expect(asteroid.name).toBe("AST-123");
   });
 
   it("maps to DB DTO", () => {

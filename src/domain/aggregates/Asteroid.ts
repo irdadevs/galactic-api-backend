@@ -1,5 +1,5 @@
 import { DomainErrorFactory } from "../../utils/errors/Error.map";
-import { REGEXP } from "../../utils/Regexp";
+import { generateSpecialName, isSpecialName } from "../../utils/nameGenerator";
 import { Uuid } from "./User";
 
 const ALLOWED_ASTEROID_TYPES = ["single", "cluster"] as const;
@@ -20,7 +20,7 @@ export type AsteroidProps = {
 export type AsteroidCreateProps = {
   id?: string;
   systemId: string;
-  name: string;
+  name?: string;
   type?: AsteroidType;
   size?: AsteroidSize;
   orbital: number;
@@ -40,7 +40,7 @@ export class AsteroidName {
 
   static create(value: string): AsteroidName {
     const normalized = value.trim();
-    if (!REGEXP.asteroidName.test(normalized)) {
+    if (!isSpecialName(normalized)) {
       throw DomainErrorFactory.domain("DOMAIN.INVALID_ASTEROID_NAME", {
         name: value,
       });
@@ -125,7 +125,7 @@ export class Asteroid {
     return new Asteroid({
       id: Uuid.create(input.id),
       systemId: Uuid.create(input.systemId),
-      name: AsteroidName.create(input.name),
+      name: AsteroidName.create(input.name ?? generateSpecialName()),
       type: AsteroidTypeValue.create(input.type ?? "single").toString(),
       size: AsteroidSizeValue.create(input.size ?? "small").toString(),
       orbital: input.orbital,
