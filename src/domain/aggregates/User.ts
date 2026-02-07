@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
-import { UserRole } from "../../../types/User.types";
 import { DomainErrorFactory } from "../../utils/errors/Error.map";
 import { REGEXP } from "../../utils/Regexp";
+
+export type UserRole = "User" | "Admin";
 
 export type UserProps = {
   id: Uuid;
