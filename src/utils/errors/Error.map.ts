@@ -188,6 +188,106 @@ export const DomainErrorMap = {
     httpCode: 400,
     retryable: false,
   },
+  INVALID_SYSTEM_NAME: {
+    code: "DOMAIN.INVALID_SYSTEM_NAME",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_SYSTEM_POSITION: {
+    code: "DOMAIN.INVALID_SYSTEM_POSITION",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_STAR_TYPE: {
+    code: "DOMAIN.INVALID_STAR_TYPE",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_STAR_CLASS: {
+    code: "DOMAIN.INVALID_STAR_CLASS",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_STAR_COLOR: {
+    code: "DOMAIN.INVALID_STAR_COLOR",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_STAR_VALUE: {
+    code: "DOMAIN.INVALID_STAR_VALUE",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_PLANET_NAME: {
+    code: "DOMAIN.INVALID_PLANET_NAME",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_PLANET_TYPE: {
+    code: "DOMAIN.INVALID_PLANET_TYPE",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_PLANET_SIZE: {
+    code: "DOMAIN.INVALID_PLANET_SIZE",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_PLANET_BIOME: {
+    code: "DOMAIN.INVALID_PLANET_BIOME",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_PLANET_ORBITAL: {
+    code: "DOMAIN.INVALID_PLANET_ORBITAL",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_PLANET_VALUE: {
+    code: "DOMAIN.INVALID_PLANET_VALUE",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_ASTEROID_TYPE: {
+    code: "DOMAIN.INVALID_ASTEROID_TYPE",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_ASTEROID_NAME: {
+    code: "DOMAIN.INVALID_ASTEROID_NAME",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_ASTEROID_SIZE: {
+    code: "DOMAIN.INVALID_ASTEROID_SIZE",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_ASTEROID_ORBITAL: {
+    code: "DOMAIN.INVALID_ASTEROID_ORBITAL",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_MOON_NAME: {
+    code: "DOMAIN.INVALID_MOON_NAME",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_MOON_SIZE: {
+    code: "DOMAIN.INVALID_MOON_SIZE",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_MOON_ORBITAL: {
+    code: "DOMAIN.INVALID_MOON_ORBITAL",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_MOON_VALUE: {
+    code: "DOMAIN.INVALID_MOON_VALUE",
+    httpCode: 400,
+    retryable: false,
+  },
 } as const satisfies Record<string, ErrorDef>;
 
 export type DomainError = (typeof DomainErrorMap)[keyof typeof DomainErrorMap];
@@ -204,6 +304,43 @@ export const DomainErrorMessages: Record<DomainErrorCode, string> = {
     "Invalid galaxy name. Name: ${name}.",
   [DomainErrorMap.INVALID_GALAXY_SHAPE.code]:
     "Invalid galaxy shape. Shape: ${shape}.",
+  [DomainErrorMap.INVALID_SYSTEM_NAME.code]:
+    "Invalid system name. Name: ${name}.",
+  [DomainErrorMap.INVALID_SYSTEM_POSITION.code]:
+    "Invalid system position. Position: ${position}.",
+  [DomainErrorMap.INVALID_STAR_TYPE.code]: "Invalid star type. Type: ${type}.",
+  [DomainErrorMap.INVALID_STAR_CLASS.code]:
+    "Invalid star class. Class: ${class}.",
+  [DomainErrorMap.INVALID_STAR_COLOR.code]:
+    "Invalid star color. Color: ${color}.",
+  [DomainErrorMap.INVALID_STAR_VALUE.code]:
+    "Invalid star value. Field: ${field}.",
+  [DomainErrorMap.INVALID_PLANET_NAME.code]:
+    "Invalid planet name. Name: ${name}.",
+  [DomainErrorMap.INVALID_PLANET_TYPE.code]:
+    "Invalid planet type. Type: ${type}.",
+  [DomainErrorMap.INVALID_PLANET_SIZE.code]:
+    "Invalid planet size. Size: ${size}.",
+  [DomainErrorMap.INVALID_PLANET_BIOME.code]:
+    "Invalid planet biome. Biome: ${biome}.",
+  [DomainErrorMap.INVALID_PLANET_ORBITAL.code]:
+    "Invalid planet orbital. Orbital: ${orbital}.",
+  [DomainErrorMap.INVALID_PLANET_VALUE.code]:
+    "Invalid planet value. Field: ${field}.",
+  [DomainErrorMap.INVALID_ASTEROID_TYPE.code]:
+    "Invalid asteroid type. Type: ${type}.",
+  [DomainErrorMap.INVALID_ASTEROID_NAME.code]:
+    "Invalid asteroid name. Name: ${name}.",
+  [DomainErrorMap.INVALID_ASTEROID_SIZE.code]:
+    "Invalid asteroid size. Size: ${size}.",
+  [DomainErrorMap.INVALID_ASTEROID_ORBITAL.code]:
+    "Invalid asteroid orbital. Orbital: ${orbital}.",
+  [DomainErrorMap.INVALID_MOON_NAME.code]: "Invalid moon name. Name: ${name}.",
+  [DomainErrorMap.INVALID_MOON_SIZE.code]: "Invalid moon size. Size: ${size}.",
+  [DomainErrorMap.INVALID_MOON_ORBITAL.code]:
+    "Invalid moon orbital. Orbital: ${orbital}.",
+  [DomainErrorMap.INVALID_MOON_VALUE.code]:
+    "Invalid moon value. Field: ${field}.",
 };
 
 export const DomainErrorFactory = createErrorFactory(
