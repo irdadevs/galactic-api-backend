@@ -9,7 +9,8 @@
     "dev": "concurrently \"npx tsc --watch\" \"nodemon dist/server.js\"",
     "test": "jest --detectOpenHandles",
     "test:watch": "jest --watch --detectOpenHandles",
-    "migrate": "ts-node --transpile-only src/infra/db/scripts/migrate.ts"
+    "migrate": "ts-node --transpile-only src/infra/db/scripts/migrate.ts",
+    "initSeed": "ts-node --transpile-only src/infra/db/scripts/initSeed.ts"
   },
   "keywords": [],
   "author": "",
@@ -32,6 +33,7 @@
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
