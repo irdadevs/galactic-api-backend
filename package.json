@@ -8,7 +8,8 @@
     "start": "node dist/server.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon dist/server.js\"",
     "test": "jest --detectOpenHandles",
-    "test:watch": "jest --watch --detectOpenHandles"
+    "test:watch": "jest --watch --detectOpenHandles",
+    "migrate": "ts-node --transpile-only src/infra/db/scripts/migrate.ts"
   },
   "keywords": [],
   "author": "",
