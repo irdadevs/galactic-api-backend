@@ -27,7 +27,7 @@ export type MoonSize = (typeof ALLOWED_MOON_SIZES)[number];
 
 export type MoonProps = {
   id: Uuid;
-  systemId: Uuid;
+  planetId: Uuid;
   name: MoonName;
   size: MoonSize;
   orbital: number;
@@ -41,7 +41,7 @@ export type MoonProps = {
 
 export type MoonCreateProps = {
   id?: string;
-  systemId: string;
+  planetId: string;
   name?: string;
   size?: MoonSize;
   orbital: number;
@@ -52,7 +52,7 @@ export type MoonCreateProps = {
 
 export type MoonDTO = {
   id: string;
-  system_id: string;
+  planet_id: string;
   name: string;
   size: MoonSize;
   orbital: number;
@@ -154,7 +154,8 @@ export class Moon {
     const relativeRadius =
       input.relativeRadius ?? randomBetween(radiusRange[0], radiusRange[1]);
     const temperature =
-      input.temperature ?? randomBetween(MOON_TEMPERATURE[0], MOON_TEMPERATURE[1]);
+      input.temperature ??
+      randomBetween(MOON_TEMPERATURE[0], MOON_TEMPERATURE[1]);
 
     ensurePositive("relativeMass", relativeMass);
     ensurePositive("relativeRadius", relativeRadius);
@@ -167,7 +168,7 @@ export class Moon {
 
     return new Moon({
       id: Uuid.create(input.id),
-      systemId: Uuid.create(input.systemId),
+      planetId: Uuid.create(input.planetId),
       name: MoonName.create(input.name ?? generateCelestialName()),
       size: size.toString(),
       orbital: input.orbital,
@@ -182,7 +183,7 @@ export class Moon {
 
   static rehydrate(props: {
     id: string;
-    systemId: string;
+    planetId: string;
     name: string;
     size: MoonSize;
     orbital: number;
@@ -201,7 +202,7 @@ export class Moon {
 
     return new Moon({
       id: Uuid.create(props.id),
-      systemId: Uuid.create(props.systemId),
+      planetId: Uuid.create(props.planetId),
       name: MoonName.create(props.name),
       size: MoonSizeValue.create(props.size).toString(),
       orbital: props.orbital,
@@ -218,8 +219,8 @@ export class Moon {
     return this.props.id.toString();
   }
 
-  get systemId(): string {
-    return this.props.systemId.toString();
+  get planetId(): string {
+    return this.props.planetId.toString();
   }
 
   get name(): string {
@@ -276,7 +277,7 @@ export class Moon {
 
   toJSON(): {
     id: string;
-    systemId: string;
+    planetId: string;
     name: string;
     size: MoonSize;
     orbital: number;
@@ -289,7 +290,7 @@ export class Moon {
   } {
     return {
       id: this.id,
-      systemId: this.systemId,
+      planetId: this.planetId,
       name: this.name,
       size: this.size,
       orbital: this.orbital,
@@ -305,7 +306,7 @@ export class Moon {
   toDB(): MoonDTO {
     return {
       id: this.id,
-      system_id: this.systemId,
+      planet_id: this.planetId,
       name: this.name,
       size: this.size,
       orbital: this.orbital,

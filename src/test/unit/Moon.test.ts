@@ -1,7 +1,7 @@
 import { Moon } from "../../domain/aggregates/Moon";
 
 const validInput = {
-  systemId: "11111111-1111-4111-8111-111111111111",
+  planetId: "11111111-1111-4111-8111-111111111111",
   name: "Luna",
   orbital: 1,
 };
@@ -26,7 +26,7 @@ describe("Moon aggregate", () => {
     expect(moon.id).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
-    expect(moon.systemId).toBe(validInput.systemId);
+    expect(moon.planetId).toBe(validInput.planetId);
     expect(moon.name).toBe(validInput.name);
     expect(moon.orbital).toBe(validInput.orbital);
   });
@@ -83,7 +83,7 @@ describe("Moon aggregate", () => {
   it("rehydrates from persistence data", () => {
     const moon = Moon.rehydrate({
       id: "22222222-2222-4222-8222-222222222222",
-      systemId: "33333333-3333-4333-8333-333333333333",
+      planetId: "33333333-3333-4333-8333-333333333333",
       name: "Europa",
       size: "medium",
       orbital: 1,
@@ -96,7 +96,7 @@ describe("Moon aggregate", () => {
     });
 
     expect(moon.id).toBe("22222222-2222-4222-8222-222222222222");
-    expect(moon.systemId).toBe("33333333-3333-4333-8333-333333333333");
+    expect(moon.planetId).toBe("33333333-3333-4333-8333-333333333333");
     expect(moon.name).toBe("Europa");
   });
 
@@ -107,7 +107,7 @@ describe("Moon aggregate", () => {
 
     expect(dto).toEqual({
       id: moon.id,
-      system_id: moon.systemId,
+      planet_id: moon.planetId,
       name: moon.name,
       size: moon.size,
       orbital: moon.orbital,
