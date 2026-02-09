@@ -3,6 +3,7 @@ import { User, Uuid } from "../../domain/aggregates/User";
 const validInput = {
   email: "test@example.com",
   passwordHash: "hashed-password-123",
+  username: "user_01",
 };
 
 const assertDomainErrorCode = (fn: () => void, code: string) => {
@@ -26,7 +27,10 @@ describe("User aggregate", () => {
     expect(Uuid.isValid(user.id)).toBe(true);
     expect(user.email).toBe(validInput.email);
     expect(user.passwordHash).toBe(validInput.passwordHash);
+    expect(user.username).toBe(validInput.username);
     expect(user.isVerified).toBe(false);
+    expect(user.isDeleted).toBe(false);
+    expect(user.deletedAt).toBeNull();
     expect(user.role).toBe("User");
     expect(user.createdAt).toBeInstanceOf(Date);
   });
@@ -37,12 +41,16 @@ describe("User aggregate", () => {
       id: "11111111-1111-4111-8111-111111111111",
       role: "Admin",
       isVerified: true,
+      isDeleted: true,
+      deletedAt: new Date("2025-01-02T00:00:00.000Z"),
       createdAt: new Date("2025-01-01T00:00:00.000Z"),
     });
 
     expect(user.id).toBe("11111111-1111-4111-8111-111111111111");
     expect(user.role).toBe("Admin");
     expect(user.isVerified).toBe(true);
+    expect(user.isDeleted).toBe(true);
+    expect(user.deletedAt?.toISOString()).toBe("2025-01-02T00:00:00.000Z");
     expect(user.createdAt.toISOString()).toBe("2025-01-01T00:00:00.000Z");
   });
 
@@ -76,6 +84,17 @@ describe("User aggregate", () => {
           passwordHash: "short",
         }),
       "DOMAIN.INVALID_USER_PASSWORD",
+    );
+  });
+
+  it("throws on invalid username", () => {
+    assertDomainErrorCode(
+      () =>
+        User.create({
+          ...validInput,
+          username: "a",
+        }),
+      "DOMAIN.INVALID_USER_USERNAME",
     );
   });
 
@@ -131,12 +150,45 @@ describe("User aggregate", () => {
     expect(user.passwordHash).toBe(validInput.passwordHash);
   });
 
+  it("changes username when different", () => {
+    const user = User.create(validInput);
+
+    user.changeUsername("new_user");
+
+    expect(user.username).toBe("new_user");
+  });
+
+  it("keeps username when unchanged", () => {
+    const user = User.create(validInput);
+
+    user.changeUsername(validInput.username);
+
+    expect(user.username).toBe(validInput.username);
+  });
+
+  it("soft deletes and restores", () => {
+    const user = User.create(validInput);
+
+    user.softDelete(new Date("2025-01-03T00:00:00.000Z"));
+
+    expect(user.isDeleted).toBe(true);
+    expect(user.deletedAt?.toISOString()).toBe("2025-01-03T00:00:00.000Z");
+
+    user.restore();
+
+    expect(user.isDeleted).toBe(false);
+    expect(user.deletedAt).toBeNull();
+  });
+
   it("rehydrates from persistence data", () => {
     const user = User.rehydrate({
       id: "22222222-2222-4222-8222-222222222222",
       email: "rehydrated@example.com",
       passwordHash: "rehydrated-hash-123",
+      username: "rehydrated_user",
       isVerified: true,
+      isDeleted: true,
+      deletedAt: new Date("2024-06-02T10:00:00.000Z"),
       createdAt: new Date("2024-06-01T10:00:00.000Z"),
       role: "User",
     });
@@ -144,7 +196,10 @@ describe("User aggregate", () => {
     expect(user.id).toBe("22222222-2222-4222-8222-222222222222");
     expect(user.email).toBe("rehydrated@example.com");
     expect(user.passwordHash).toBe("rehydrated-hash-123");
+    expect(user.username).toBe("rehydrated_user");
     expect(user.isVerified).toBe(true);
+    expect(user.isDeleted).toBe(true);
+    expect(user.deletedAt?.toISOString()).toBe("2024-06-02T10:00:00.000Z");
     expect(user.role).toBe("User");
   });
 
@@ -156,8 +211,11 @@ describe("User aggregate", () => {
     expect(dto).toEqual({
       id: user.id,
       email: user.email,
+      username: user.username,
       password: user.passwordHash,
       is_verified: user.isVerified,
+      is_deleted: user.isDeleted,
+      deleted_at: user.deletedAt,
       created_at: user.createdAt,
       role: user.role,
     });

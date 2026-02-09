@@ -8,16 +8,22 @@ export type UserProps = {
   id: Uuid;
   email: Email;
   passwordHash: PasswordHash;
+  username: Username;
   isVerified: boolean;
-  createdAt: Date;
+  isDeleted: boolean;
   role: Role;
+  deletedAt: Date | null;
+  createdAt: Date;
 };
 
 export type UserCreateProps = {
   email: string;
   passwordHash: string;
+  username: string;
   id?: string;
   isVerified?: boolean;
+  isDeleted?: boolean;
+  deletedAt?: Date | null;
   role?: UserRole;
   createdAt?: Date;
 };
@@ -25,8 +31,11 @@ export type UserCreateProps = {
 export type UserDTO = {
   id: string;
   email: string;
+  username: string;
   password: string;
   is_verified: boolean;
+  is_deleted: boolean;
+  deleted_at: Date | null;
   created_at: Date;
   role: UserRole;
 };
@@ -97,6 +106,28 @@ export class PasswordHash {
   }
 }
 
+export class Username {
+  private constructor(private readonly value: string) {}
+
+  static create(value: string): Username {
+    const normalized = value.trim();
+    if (!REGEXP.username.test(normalized)) {
+      throw DomainErrorFactory.domain("DOMAIN.INVALID_USER_USERNAME", {
+        username: value,
+      });
+    }
+    return new Username(normalized);
+  }
+
+  toString(): string {
+    return this.value;
+  }
+
+  equals(other: Username): boolean {
+    return this.value === other.value;
+  }
+}
+
 export class Role {
   private constructor(private readonly value: UserRole) {}
 
@@ -131,8 +162,11 @@ export class User {
       id: Uuid.create(input.id),
       email: Email.create(input.email),
       passwordHash: PasswordHash.create(input.passwordHash),
+      username: Username.create(input.username),
       isVerified: input.isVerified ?? false,
+      isDeleted: input.isDeleted ?? false,
       createdAt: input.createdAt ?? now,
+      deletedAt: input.deletedAt ?? null,
       role: Role.create(input.role ?? "User"),
     });
 
@@ -143,7 +177,10 @@ export class User {
     id: string;
     email: string;
     passwordHash: string;
+    username: string;
     isVerified: boolean;
+    isDeleted: boolean;
+    deletedAt: Date | null;
     createdAt: Date;
     role: UserRole;
   }): User {
@@ -151,8 +188,11 @@ export class User {
       id: Uuid.create(props.id),
       email: Email.create(props.email),
       passwordHash: PasswordHash.create(props.passwordHash),
+      username: Username.create(props.username),
       isVerified: props.isVerified,
+      isDeleted: props.isDeleted,
       createdAt: props.createdAt,
+      deletedAt: props.deletedAt,
       role: Role.create(props.role),
     });
   }
@@ -169,8 +209,20 @@ export class User {
     return this.props.passwordHash.toString();
   }
 
+  get username(): string {
+    return this.props.username.toString();
+  }
+
   get isVerified(): boolean {
     return this.props.isVerified;
+  }
+
+  get isDeleted(): boolean {
+    return this.props.isDeleted;
+  }
+
+  get deletedAt(): Date | null {
+    return this.props.deletedAt;
   }
 
   get createdAt(): Date {
@@ -205,19 +257,49 @@ export class User {
     this.props.passwordHash = next;
   }
 
+  changeUsername(value: string): void {
+    const next = Username.create(value);
+    if (next.equals(this.props.username)) {
+      return;
+    }
+    this.props.username = next;
+  }
+
+  softDelete(at?: Date): void {
+    if (this.props.isDeleted) {
+      return;
+    }
+    this.props.isDeleted = true;
+    this.props.deletedAt = at ?? new Date();
+  }
+
+  restore(): void {
+    if (!this.props.isDeleted) {
+      return;
+    }
+    this.props.isDeleted = false;
+    this.props.deletedAt = null;
+  }
+
   toJSON(): {
     id: string;
     email: string;
+    username: string;
     passwordHash: string;
     isVerified: boolean;
+    isDeleted: boolean;
+    deletedAt: Date | null;
     createdAt: Date;
     role: UserRole;
   } {
     return {
       id: this.id,
       email: this.email,
+      username: this.username,
       passwordHash: this.passwordHash,
       isVerified: this.isVerified,
+      isDeleted: this.isDeleted,
+      deletedAt: this.deletedAt,
       createdAt: this.createdAt,
       role: this.role,
     };
@@ -227,8 +309,11 @@ export class User {
     return {
       id: this.id,
       email: this.email,
+      username: this.username,
       password: this.passwordHash,
       is_verified: this.isVerified,
+      is_deleted: this.isDeleted,
+      deleted_at: this.deletedAt,
       created_at: this.createdAt,
       role: this.role,
     };

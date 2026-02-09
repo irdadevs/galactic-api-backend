@@ -6,4 +6,5 @@ export const REGEXP = {
   planetName: /^[\p{L}\p{N}-]{3,25}$/u,
   moonName: /^[\p{L}\p{N}-]{3,25}$/u,
   asteroidName: /^[\p{L}\p{N}-]{3,25}$/u,
+  username: /^[\p{L}\p{N}_-]{3,25}$/u,
 };

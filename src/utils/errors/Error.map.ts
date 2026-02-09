@@ -173,6 +173,11 @@ export const DomainErrorMap = {
     httpCode: 400,
     retryable: false,
   },
+  INVALID_USER_USERNAME: {
+    code: "DOMAIN.INVALID_USER_USERNAME",
+    httpCode: 400,
+    retryable: false,
+  },
   INVALID_USER_ROLE: {
     code: "DOMAIN.INVALID_USER_ROLE",
     httpCode: 400,
@@ -299,6 +304,8 @@ export const DomainErrorMessages: Record<DomainErrorCode, string> = {
     "Invalid user email. Email: ${email}.",
   [DomainErrorMap.INVALID_USER_PASSWORD.code]:
     "Invalid user password hash. Hash: ${password}.",
+  [DomainErrorMap.INVALID_USER_USERNAME.code]:
+    "Invalid username. Username: ${username}.",
   [DomainErrorMap.INVALID_USER_ROLE.code]: "Invalid user role. Role: ${role}.",
   [DomainErrorMap.INVALID_GALAXY_NAME.code]:
     "Invalid galaxy name. Name: ${name}.",
