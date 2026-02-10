@@ -4,6 +4,9 @@ dotenv.config();
 import Express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import compression from "compression";
+import hpp from "hpp";
+import rateLimit from "express-rate-limit";
 
 import { PgPoolQueryable } from "./infra/db/Postgres";
 import { PgUnitOfWorkFactory } from "./infra/db/PostgresUoW";
@@ -15,11 +18,23 @@ const app = Express();
 
 const PORT = Number(process.env.PORT ?? 8080);
 const ENVIRONMENT = process.env.NODE_ENV ?? "dev";
+const IS_PROD = ENVIRONMENT === "production";
 
 // middleware
+app.set("trust proxy", 1);
 app.use(Express.json());
 app.use(cors());
-app.use(morgan(ENVIRONMENT));
+app.use(hpp());
+app.use(compression());
+app.use(
+  rateLimit({
+    windowMs: 60_000,
+    max: IS_PROD ? 300 : 1000,
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
+app.use(morgan(IS_PROD ? "combined" : "dev"));
 app.use(buildApiRouter());
 
 // infra singletons
@@ -27,9 +42,8 @@ let postgres: PgPoolQueryable;
 let uowFactory: PgUnitOfWorkFactory;
 let cache: RedisAdapter;
 
-const server = app.listen(PORT, async () => {
+async function start(): Promise<void> {
   try {
-    // ---- DB ----
     postgres = await PgPoolQueryable.connect(
       {
         connectionString: process.env.DATABASE_URL,
@@ -42,51 +56,61 @@ const server = app.listen(PORT, async () => {
       console,
     );
 
-    // ---- UoW factory ----
     uowFactory = new PgUnitOfWorkFactory(postgres._getPool());
 
-    // ---- Cache ----
     cache = new RedisAdapter({
       keyPrefix: ENVIRONMENT,
     });
-    `✅${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.successColor(
-      `🚀 Server listening on port ${PORT}.`,
-    )}`;
+
+    app.listen(PORT, () => {
+      console.log(
+        `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.successColor(
+          `listening on port ${PORT}`,
+        )}`,
+      );
+    });
   } catch (e) {
-    `❌${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
-      `Failed to start server. ${e}.`,
-    )}`;
+    console.error(
+      `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
+        `failed to start: ${e instanceof Error ? e.message : String(e)}`,
+      )}`,
+    );
     process.exit(1);
   }
-});
+}
 
 // ---- graceful shutdown ----
 const shutdown = async (signal: string) => {
-  `⚠️${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.warningColor(
-    `🛑 ${signal} received. Shutting down...`,
-  )}`;
-  console.log(`\n🛑 ${signal} received. Shutting down…`);
-
-  server.close(async () => {
-    try {
-      await cache?.close();
-      await postgres?.close();
-
-      `✅${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.successColor(
-        `Graceful shutdown complete.`,
-      )}`;
-      process.exit(0);
-    } catch (e) {
-      `❌${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
-        `Error during shutdown. ${e}`,
-      )}`;
-      process.exit(1);
-    }
-  });
+  console.log(
+    `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.warningColor(
+      `🛑shutdown signal ${signal} received`,
+    )}`,
+  );
+  try {
+    await cache?.close();
+    await postgres?.close();
+    process.exit(0);
+  } catch (e) {
+    console.error(
+      `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
+        `❌shutdown error: ${e instanceof Error ? e.message : String(e)}`,
+      )}`,
+    );
+    process.exit(1);
+  }
 };
 
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+
+start().catch((e) => {
+  console.error(
+    `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
+      `❌bootstrap error: ${e instanceof Error ? e.message : String(e)}`,
+    )}`,
+  );
+  process.exit(1);
+});
 
 // OPTIONAL: export infra for DI
 export { postgres, uowFactory, cache };
