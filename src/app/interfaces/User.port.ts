@@ -16,7 +16,6 @@ export type ListUsersQuery = {
 };
 
 export interface IUser {
-  create(user: User): Promise<User>;
   findById(id: Uuid): Promise<User | null>;
   findByEmail(email: Email): Promise<User | null>;
   findByUsername(username: Username): Promise<User | null>;
