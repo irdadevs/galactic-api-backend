@@ -11,7 +11,7 @@ export interface ISystem {
   findByGalaxy(galaxyId: Uuid): Promise<{ rows: System[]; total: number }>;
   findByName(name: SystemName): Promise<System | null>;
   findByPosition(position: SystemPositionProps): Promise<System | null>;
-  changeName(name: SystemName): Promise<System>;
-  changePosition(position: SystemPositionProps): Promise<System>;
+  changeName(id: Uuid, name: SystemName): Promise<System>;
+  changePosition(id: Uuid, position: SystemPositionProps): Promise<System>;
   delete(id: Uuid): Promise<void>;
 }

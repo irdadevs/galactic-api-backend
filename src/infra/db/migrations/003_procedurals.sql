@@ -72,7 +72,7 @@ CREATE INDEX IF NOT EXISTS idx_planets_system ON procedurals.planets (system_id)
 
 CREATE TABLE IF NOT EXISTS procedurals.moons (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
-  system_id uuid NOT NULL REFERENCES procedurals.systems (id) ON DELETE CASCADE,
+  planet_id uuid NOT NULL REFERENCES procedurals.planets (id) ON DELETE CASCADE,
   name non_empty_text NOT NULL CHECK (name ~ '^[[:alnum:]-]{3,25}$'),
   size procedurals.moon_sizes NOT NULL,
   orbital numeric NOT NULL CHECK (orbital > 0),
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS procedurals.moons (
   updated_at timestamptz NOT NULL DEFAULT now_utc ()
 );
 
-CREATE INDEX IF NOT EXISTS idx_moons_system ON procedurals.moons (system_id);
+CREATE INDEX IF NOT EXISTS idx_moons_planet ON procedurals.moons (planet_id);
 
 CREATE TABLE IF NOT EXISTS procedurals.asteroids (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
