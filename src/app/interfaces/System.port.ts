@@ -1,7 +1,7 @@
 import {
   System,
   SystemName,
-  SystemPosition,
+  SystemPositionProps,
 } from "../../domain/aggregates/System";
 import { Uuid } from "../../domain/aggregates/User";
 
@@ -10,8 +10,8 @@ export interface ISystem {
   findById(id: Uuid): Promise<System | null>;
   findByGalaxy(galaxyId: Uuid): Promise<{ rows: System[]; total: number }>;
   findByName(name: SystemName): Promise<System | null>;
-  findByPosition(position: SystemPosition): Promise<System | null>;
+  findByPosition(position: SystemPositionProps): Promise<System | null>;
   changeName(name: SystemName): Promise<System>;
-  changePosition(position: SystemPosition): Promise<System>;
+  changePosition(position: SystemPositionProps): Promise<System>;
   delete(id: Uuid): Promise<void>;
 }

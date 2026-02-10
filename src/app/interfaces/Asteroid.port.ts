@@ -11,9 +11,9 @@ export interface IAsteroid {
   findById(id: Uuid): Promise<Asteroid | null>;
   findBySystem(systemId: Uuid): Promise<{ rows: Asteroid[]; total: number }>;
   findByName(name: AsteroidName): Promise<Asteroid | null>;
-  changeName(name: AsteroidName): Promise<Asteroid>;
-  changeType(type: AsteroidType): Promise<Asteroid>;
-  changeSize(size: AsteroidSize): Promise<Asteroid>;
-  changeOrbital(orbital: number): Promise<Asteroid>;
+  changeName(id: Uuid, name: AsteroidName): Promise<Asteroid>;
+  changeType(id: Uuid, type: AsteroidType): Promise<Asteroid>;
+  changeSize(id: Uuid, size: AsteroidSize): Promise<Asteroid>;
+  changeOrbital(id: Uuid, orbital: number): Promise<Asteroid>;
   delete(id: Uuid): Promise<void>;
 }

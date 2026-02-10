@@ -3,7 +3,6 @@ import {
   PasswordHash,
   User,
   Username,
-  UserRole,
   Uuid,
 } from "../../domain/aggregates/User";
 
@@ -22,10 +21,10 @@ export interface IUser {
   findByEmail(email: Email): Promise<User | null>;
   findByUsername(username: Username): Promise<User | null>;
   list(query: ListUsersQuery): Promise<{ rows: User[]; total: number }>;
-  changeEmail(email: Email): Promise<User>;
-  changePassword(hash: PasswordHash): Promise<User>;
+  changeEmail(id: Uuid, email: Email): Promise<User>;
+  changePassword(id: Uuid, hash: PasswordHash): Promise<User>;
+  changeUsername(id: Uuid, username: Username): Promise<User>;
   verify(email: Email): Promise<void>;
-  softDelete(email: Email): Promise<void>;
+  softDelete(email: Email, at?: Date): Promise<void>;
   restore(email: Email): Promise<void>;
-  changeRole(email: Email, role: UserRole): Promise<User>;
 }

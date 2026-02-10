@@ -20,7 +20,7 @@ export interface IGalaxy {
   findByName(name: GalaxyName): Promise<Galaxy | null>;
   findByShape(shape: GalaxyShape): Promise<Galaxy | null>;
   list(query: ListGalaxyQuery): Promise<{ rows: Galaxy[]; total: number }>;
-  changeName(name: GalaxyName): Promise<Galaxy>;
-  changeShape(shape: GalaxyShape): Promise<Galaxy>;
+  changeName(id: Uuid, name: GalaxyName): Promise<Galaxy>;
+  changeShape(id: Uuid, shape: GalaxyShape): Promise<Galaxy>;
   delete(id: Uuid): Promise<void>;
 }

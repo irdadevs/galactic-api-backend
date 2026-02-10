@@ -6,13 +6,8 @@ export interface IMoon {
   findById(id: Uuid): Promise<Moon | null>;
   findByPlanet(planetId: Uuid): Promise<{ rows: Moon[]; total: number }>;
   findByName(name: MoonName): Promise<Moon | null>;
-  changeName(name: MoonName): Promise<Moon>;
-  changeSize(size: MoonSize): Promise<Moon>;
-  changeOrbital(orbital: number): Promise<Moon>;
-  changeMass(relative: number): Promise<Moon>;
-  changeRadius(relative: number): Promise<Moon>;
-  changeAbsolutes(relativeMass: number, relativeRadius: number): Promise<Moon>;
-  changeGravity(gravity: number): Promise<Moon>;
-  changeTemperature(temperature: number): Promise<Moon>;
+  changeName(id: Uuid, name: MoonName): Promise<Moon>;
+  changeSize(id: Uuid, size: MoonSize): Promise<Moon>;
+  changeOrbital(id: Uuid, orbital: number): Promise<Moon>;
   delete(id: Uuid): Promise<void>;
 }
