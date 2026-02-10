@@ -241,3 +241,5 @@ export const nameSyllables = {
     "TESSER-",
   ],
 };
+
+export const API_VERSION = 1;

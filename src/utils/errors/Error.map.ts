@@ -106,6 +106,11 @@ export const SharedErrorMap = {
     httpCode: 500,
     retryable: false,
   },
+  INVALID_SECRET: {
+    code: "SHARED.INVALID_SECRET",
+    httpCode: 500,
+    retryable: false,
+  },
 } as const satisfies Record<string, ErrorDef>;
 
 export type SharedError = (typeof SharedErrorMap)[keyof typeof SharedErrorMap];
@@ -150,6 +155,7 @@ export const SharedErrorMessages: Record<SharedErrorCode, string> = {
   [SharedErrorMap.TRANSACTION_FAILED.code]:
     "Atomic database transaction failed. Cause: \n${cause}",
   [SharedErrorMap.ORDER_MAP_EMPTY.code]: "Order map need at least one entry.",
+  [SharedErrorMap.INVALID_SECRET.code]: "Invalid JWT secret.",
 };
 
 export const SharedErrorFactory = createErrorFactory(

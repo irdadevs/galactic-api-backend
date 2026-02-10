@@ -1,0 +1,56 @@
+import { RequestHandler, Router } from "express";
+import { API_VERSION } from "../../utils/constants";
+import { makeAuth } from "../middlewares/auth";
+import { makeScope } from "../middlewares/scope";
+import { UserController } from "../controllers/User.controller";
+import { UserRoutes } from "./User.routes";
+
+export type ExpressHandler = RequestHandler;
+export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
+
+export type RouteDef = {
+  method: HttpMethod;
+  path: string;
+  /** one or many middlewares */
+  before?: ExpressHandler | ExpressHandler[];
+  handler: ExpressHandler;
+};
+
+function registerRoutes(
+  router: Router,
+  base: string,
+  defs: ReturnType<typeof UserRoutes>,
+) {
+  for (const def of defs) {
+    const path = `${base}${def.path}`;
+    const befores = def.before
+      ? Array.isArray(def.before)
+        ? def.before
+        : [def.before]
+      : [];
+    (router as any)[def.method](path, ...befores, def.handler);
+  }
+}
+
+export function buildApiRouter(): Router {
+  const router = Router();
+  const auth = makeAuth();
+  const scope = makeScope();
+
+  const base = `/api/v${API_VERSION}`;
+
+  registerRoutes(
+    router,
+    `${base}/user`,
+    UserRoutes(new UserController(), auth, scope),
+  );
+
+  registerRoutes(router, `${base}/galaxy`, []);
+  registerRoutes(router, `${base}/system`, []);
+  registerRoutes(router, `${base}/star`, []);
+  registerRoutes(router, `${base}/planet`, []);
+  registerRoutes(router, `${base}/moon`, []);
+  registerRoutes(router, `${base}/asteroid`, []);
+
+  return router;
+}

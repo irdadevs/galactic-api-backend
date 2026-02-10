@@ -9,6 +9,7 @@ import { PgPoolQueryable } from "./infra/db/Postgres";
 import { PgUnitOfWorkFactory } from "./infra/db/PostgresUoW";
 import { RedisAdapter } from "./infra/RedisAdapter";
 import { CONSOLE_COLORS } from "./utils/Chalk";
+import { buildApiRouter } from "./presentation/routes";
 
 const app = Express();
 
@@ -19,6 +20,7 @@ const ENVIRONMENT = process.env.NODE_ENV ?? "dev";
 app.use(Express.json());
 app.use(cors());
 app.use(morgan(ENVIRONMENT));
+app.use(buildApiRouter());
 
 // infra singletons
 let postgres: PgPoolQueryable;
