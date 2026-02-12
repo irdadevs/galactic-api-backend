@@ -1,56 +1,79 @@
 import jwt, { Algorithm, SignOptions, VerifyOptions } from "jsonwebtoken";
 import { SharedErrorFactory } from "../../utils/errors/Error.map";
-import { IJWT } from "../../app/interfaces/Jwt.port";
-
-export type JwtClaims = {
-  sub: string; // userId
-  kind: string;
-  userRole?: string;
-  tenantId?: string;
-  iat?: number;
-  exp?: number;
-};
+import { IJWT, JwtClaims } from "../../app/interfaces/Jwt.port";
+import { TOKEN_TIMES_MAP } from "../../utils/TokenTimes.map";
 
 const ALG: Algorithm = "HS256";
 
 export default class JwtService implements IJWT {
-  constructor() {}
+  private readonly accessSecret: string;
+  private readonly refreshSecret: string;
+  private readonly issuer: string;
+  private readonly audience: string;
 
-  private mustGetSecret() {
-    const s = process.env.JWT_SECRET;
-    if (!s) throw SharedErrorFactory.presentation("SHARED.INVALID_SECRET");
-    return s;
+  constructor() {
+    this.accessSecret = this.mustGetEnv("JWT_SECRET");
+    this.refreshSecret = this.mustGetEnv("JWT_REFRESH_SECRET");
+    this.issuer = this.mustGetEnv("JWT_ISSUER");
+    this.audience = this.mustGetEnv("JWT_AUDIENCE");
   }
 
-  public signToken(
-    claims: Omit<JwtClaims, "iat" | "exp">,
-    opts?: { expiresIn?: number | number; issuer?: string; audience?: string },
-  ): string {
-    const secret = this.mustGetSecret();
+  private mustGetEnv(key: string): string {
+    const value = process.env[key];
+    if (!value) {
+      throw SharedErrorFactory.presentation("SHARED.INVALID_SECRET", {
+        key,
+      });
+    }
+    return value;
+  }
 
-    const signOpts: SignOptions = {
+  private baseSignOptions(expiresIn: number): SignOptions {
+    return {
       algorithm: ALG,
-      expiresIn: opts?.expiresIn ?? "24h",
-      issuer: opts?.issuer,
-      audience: opts?.audience,
+      expiresIn,
+      issuer: this.issuer,
+      audience: this.audience,
     };
-
-    return jwt.sign(claims, secret, signOpts);
   }
 
-  public verifyToken(
-    token: string,
-    opts?: { issuer?: string; audience?: string },
-  ): JwtClaims {
-    const secret = this.mustGetSecret();
-
-    const verifyOpts: VerifyOptions = {
+  private baseVerifyOptions(): VerifyOptions {
+    return {
       algorithms: [ALG],
-      issuer: opts?.issuer,
-      audience: opts?.audience,
+      issuer: this.issuer,
+      audience: this.audience,
     };
+  }
 
-    const decoded = jwt.verify(token, secret, verifyOpts) as JwtClaims;
-    return decoded;
+  signAccessToken(claims: Omit<JwtClaims, "iat" | "exp">): string {
+    return jwt.sign(
+      claims,
+      this.accessSecret,
+      this.baseSignOptions(TOKEN_TIMES_MAP.fifteenMinutes),
+    );
+  }
+
+  signRefreshToken(claims: Omit<JwtClaims, "iat" | "exp">): string {
+    return jwt.sign(
+      claims,
+      this.refreshSecret,
+      this.baseSignOptions(TOKEN_TIMES_MAP.oneWeek),
+    );
+  }
+
+  verifyAccessToken(token: string): JwtClaims {
+    return jwt.verify(
+      token,
+      this.accessSecret,
+      this.baseVerifyOptions(),
+    ) as JwtClaims;
+  }
+
+  verifyRefreshToken(token: string): JwtClaims {
+    return jwt.verify(
+      token,
+      this.refreshSecret,
+      this.baseVerifyOptions(),
+    ) as JwtClaims;
   }
 }

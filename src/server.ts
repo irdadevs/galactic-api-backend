@@ -17,6 +17,26 @@ import UserRepo from "./infra/repos/User.repository";
 import JwtService from "./infra/repos/Jwt.repository";
 import { AuthMiddleware } from "./presentation/middlewares/Auth.middleware";
 import { ScopeMiddleware } from "./presentation/middlewares/scope";
+import { SessionRepo } from "./infra/repos/Session.repository";
+import { LoginUser } from "./app/use-cases/commands/LoginUser.command";
+import { HasherRepo } from "./infra/repos/Hasher.repository";
+import { SignupUser } from "./app/use-cases/commands/SignupUser.command";
+import { VerifyUser } from "./app/use-cases/commands/VerifyUser.command";
+import { ChangeEmail } from "./app/use-cases/commands/ChangeEmail.command";
+import { ChangePassword } from "./app/use-cases/commands/ChangePassword.command";
+import { ChangeUsername } from "./app/use-cases/commands/ChangeUsername.command";
+import { ListUsers } from "./app/use-cases/queries/users/ListUsers.query";
+import { SoftDeleteUser } from "./app/use-cases/commands/SoftDeleteUser.command";
+import { RestoreUser } from "./app/use-cases/commands/RestoreUser.command";
+import { AuthService } from "./app/app-services/users/Auth.service";
+import { RefreshSession } from "./app/use-cases/commands/RefreshSession.command";
+import { LogoutSession } from "./app/use-cases/commands/LogoutSession.command";
+import { LogoutAllSessions } from "./app/use-cases/commands/LogoutAllSessions.command";
+import { PlatformService } from "./app/app-services/users/Platform.service";
+import { LifecycleService } from "./app/app-services/users/Lifecycle.service";
+import { UserController } from "./presentation/controllers/User.controller";
+import FindUser from "./app/use-cases/queries/users/FindUser.query";
+import { HealthQuery } from "./app/use-cases/queries/Health.query";
 
 // --------------------
 // Server config
@@ -83,13 +103,57 @@ async function start(): Promise<void> {
     // TODO: Here we will instanciate all that needs DI:
     //! Infra layer (repos)
     const userRepo = new UserRepo(postgres);
+    const sessionRepo = new SessionRepo(postgres._getPool());
+    const hasher = new HasherRepo();
     const jwtService = new JwtService();
     //! App layer
     // Use-cases
+    const healthCheck = new HealthQuery();
+    const loginUser = new LoginUser(userRepo, hasher);
+    const signupUser = new SignupUser(userRepo, hasher);
+    const verifyUser = new VerifyUser(userRepo);
+    const changeEmailUser = new ChangeEmail(userRepo);
+    const changePasswordUser = new ChangePassword(
+      userRepo,
+      hasher,
+      sessionRepo,
+    );
+    const changeUsernameUser = new ChangeUsername(userRepo);
+    const listUsers = new ListUsers(userRepo, cache);
+    const softDeleteUser = new SoftDeleteUser(userRepo);
+    const restoreUser = new RestoreUser(userRepo);
+    const refreshSession = new RefreshSession(jwtService, sessionRepo, hasher);
+    const logoutSession = new LogoutSession(sessionRepo);
+    const logoutAllSessions = new LogoutAllSessions(sessionRepo);
+    const findUser = new FindUser(userRepo);
     // App-services
+    const authService = new AuthService(
+      loginUser,
+      refreshSession,
+      logoutSession,
+      logoutAllSessions,
+      sessionRepo,
+      jwtService,
+      hasher,
+    );
+    const platformService = new PlatformService(
+      signupUser,
+      verifyUser,
+      changeEmailUser,
+      changePasswordUser,
+      changeUsernameUser,
+    );
+    const lifecycleService = new LifecycleService(softDeleteUser, restoreUser);
     //! Presentation layer
     // Controllers
-    // const userController = new UserController(healthCheck, authService, lifecycleService);
+    const userController = new UserController(
+      healthCheck,
+      findUser,
+      listUsers,
+      authService,
+      platformService,
+      lifecycleService,
+    );
     // Middlewares
     const authMiddleware = new AuthMiddleware(jwtService, {
       issuer: process.env.JWT_ISSUER!,
@@ -110,7 +174,7 @@ async function start(): Promise<void> {
         "✅ Composition root wiring finished",
       )}`,
     );
-
+    //
     // --------------------
     // 3️⃣ Start listening
     // --------------------

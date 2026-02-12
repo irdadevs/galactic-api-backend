@@ -30,7 +30,8 @@
     "nodemailer": "^8.0.0",
     "pg": "^8.18.0",
     "redis": "^5.10.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

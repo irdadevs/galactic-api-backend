@@ -103,12 +103,57 @@ export const SharedErrorMap = {
   },
   ORDER_MAP_EMPTY: {
     code: "SHARED.ORDER_MAP_EMPTY",
-    httpCode: 500,
+    httpCode: 400,
     retryable: false,
   },
   INVALID_SECRET: {
     code: "SHARED.INVALID_SECRET",
-    httpCode: 500,
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_CREDENTIALS: {
+    code: "SHARED.INVALID_CREDENTIALS",
+    httpCode: 400,
+    retryable: false,
+  },
+  REFRESH_REUSED: {
+    code: "AUTH.REFRESH_REUSED",
+    httpCode: 400,
+    retryable: false,
+  },
+  INVALID_REFRESH: {
+    code: "AUTH.INVALID_REFRESH",
+    httpCode: 400,
+    retryable: false,
+  },
+  SESSION_EXPIRED: {
+    code: "AUTH.SESSION_EXPIRED",
+    httpCode: 400,
+    retryable: false,
+  },
+  SESSION_INVALID: {
+    code: "AUTH.SESSION_INVALID",
+    httpCode: 400,
+    retryable: false,
+  },
+  EMAIL_EXIST: {
+    code: "SHARED.EMAIL_EXIST",
+    httpCode: 400,
+    retryable: false,
+  },
+  USERNAME_EXIST: {
+    code: "SHARED.USERNAME_EXIST",
+    httpCode: 400,
+    retryable: false,
+  },
+  SOFT_DELETE_FAILED: {
+    code: "AUTH.SOFT_DELETE_FAILED",
+    httpCode: 400,
+    retryable: false,
+  },
+  RESTORE_FAILED: {
+    code: "AUTH.RESTORE_FAILED",
+    httpCode: 400,
     retryable: false,
   },
 } as const satisfies Record<string, ErrorDef>;
@@ -156,6 +201,18 @@ export const SharedErrorMessages: Record<SharedErrorCode, string> = {
     "Atomic database transaction failed. Cause: \n${cause}",
   [SharedErrorMap.ORDER_MAP_EMPTY.code]: "Order map need at least one entry.",
   [SharedErrorMap.INVALID_SECRET.code]: "Invalid JWT secret.",
+  [SharedErrorMap.INVALID_CREDENTIALS.code]: "Invalid login credentials.",
+  [SharedErrorMap.INVALID_REFRESH.code]: "Invalid session refresh.",
+  [SharedErrorMap.SESSION_INVALID.code]: "Invalid session.",
+  [SharedErrorMap.SESSION_EXPIRED.code]: "Expired session.",
+  [SharedErrorMap.REFRESH_REUSED.code]: "Session refresh token reused.",
+  [SharedErrorMap.EMAIL_EXIST.code]: "Email already exist. Email: ${newEmail}.",
+  [SharedErrorMap.USERNAME_EXIST.code]:
+    "Username already exist. Username: ${newUsername}.",
+  [SharedErrorMap.SOFT_DELETE_FAILED.code]:
+    "User soft delete failled. Id: ${id}, Cause: \n${cause}",
+  [SharedErrorMap.RESTORE_FAILED.code]:
+    "User soft delete failled. Id: ${id}, Cause: \n${cause}",
 };
 
 export const SharedErrorFactory = createErrorFactory(

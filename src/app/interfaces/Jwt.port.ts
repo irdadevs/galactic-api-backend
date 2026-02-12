@@ -3,18 +3,17 @@ export type JwtClaims = {
   kind: string;
   userRole?: string;
   tenantId?: string;
+  sessionId?: string;
   iat?: number;
   exp?: number;
 };
 
 export interface IJWT {
-  signToken(
-    claims: Omit<JwtClaims, "iat" | "exp">,
-    opts?: { expiresIn?: string | number; issuer?: string; audience?: string },
-  ): string;
+  signAccessToken(claims: Omit<JwtClaims, "iat" | "exp">): string;
 
-  verifyToken(
-    token: string,
-    opts?: { issuer?: string; audience?: string },
-  ): JwtClaims;
+  signRefreshToken(claims: Omit<JwtClaims, "iat" | "exp">): string;
+
+  verifyAccessToken(token: string): JwtClaims;
+
+  verifyRefreshToken(token: string): JwtClaims;
 }

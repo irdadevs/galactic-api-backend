@@ -42,7 +42,7 @@ export function buildApiRouter(deps: {
 
   registerRoutes(
     router,
-    `${base}/user`,
+    `${base}/users`,
     UserRoutes(deps.userController, deps.auth, deps.scope),
   );
 

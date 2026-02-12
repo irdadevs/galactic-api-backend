@@ -16,6 +16,7 @@ export type ListUsersQuery = {
 };
 
 export interface IUser {
+  save(user: User): Promise<User>;
   findById(id: Uuid): Promise<User | null>;
   findByEmail(email: Email): Promise<User | null>;
   findByUsername(username: Username): Promise<User | null>;
@@ -24,6 +25,6 @@ export interface IUser {
   changePassword(id: Uuid, hash: PasswordHash): Promise<User>;
   changeUsername(id: Uuid, username: Username): Promise<User>;
   verify(email: Email): Promise<void>;
-  softDelete(email: Email, at?: Date): Promise<void>;
-  restore(email: Email): Promise<void>;
+  softDelete(id: Uuid, at?: Date): Promise<void>;
+  restore(id: Uuid, at?: Date): Promise<void>;
 }

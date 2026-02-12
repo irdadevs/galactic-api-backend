@@ -1,4 +1,6 @@
 import { Uuid } from "../../../domain/aggregates/User";
+import { RestoreUser } from "../../use-cases/commands/RestoreUser.command";
+import { SoftDeleteUser } from "../../use-cases/commands/SoftDeleteUser.command";
 
 export class LifecycleService {
   constructor(

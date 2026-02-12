@@ -55,6 +55,143 @@ export default class UserRepo implements IUser {
     return this.mapRow(query.rows[0]);
   }
 
+  private async attachRole(user: User): Promise<void> {
+    const roleRes = await this.db.query(
+      `SELECT id FROM auth.roles WHERE key = $1 LIMIT 1`,
+      [user.role],
+    );
+
+    if (roleRes.rowCount === 0) {
+      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+        sourceType: "role",
+        id: user.role,
+      });
+    }
+
+    const roleId = roleRes.rows[0].id;
+
+    await this.db.query(
+      `
+    INSERT INTO auth.user_roles (user_id, role_id)
+    VALUES ($1, $2)
+    `,
+      [user.id.toString(), roleId],
+    );
+  }
+
+  private async syncRole(user: User): Promise<void> {
+    const roleRes = await this.db.query(
+      `SELECT id FROM auth.roles WHERE key = $1 LIMIT 1`,
+      [user.role],
+    );
+
+    if (roleRes.rowCount === 0) {
+      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+        sourceType: "role",
+        id: user.role,
+      });
+    }
+
+    const roleId = roleRes.rows[0].id;
+
+    await this.db.query(
+      `
+    DELETE FROM auth.user_roles
+    WHERE user_id = $1
+    `,
+      [user.id.toString()],
+    );
+
+    await this.db.query(
+      `
+    INSERT INTO auth.user_roles (user_id, role_id)
+    VALUES ($1, $2)
+    `,
+      [user.id.toString(), roleId],
+    );
+  }
+
+  async save(user: User): Promise<User> {
+    const id = user.id.toString();
+
+    // Check if exists
+    const exists = await this.db.query(
+      `SELECT 1 FROM auth.users WHERE id = $1`,
+      [id],
+    );
+
+    if (exists.rowCount === 0) {
+      // INSERT
+      await this.db.query(
+        `
+      INSERT INTO auth.users (
+        id,
+        email,
+        hashed_password,
+        username,
+        is_verified,
+        is_deleted,
+        deleted_at,
+        created_at,
+        updated_at
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, now_utc())
+      `,
+        [
+          id,
+          user.email.toString(),
+          user.passwordHash.toString(),
+          user.username.toString(),
+          user.isVerified,
+          user.isDeleted ?? false,
+          user.deletedAt ?? null,
+          user.createdAt,
+        ],
+      );
+
+      // Insert role
+      await this.attachRole(user);
+    } else {
+      // UPDATE
+      await this.db.query(
+        `
+      UPDATE auth.users
+      SET
+        email = $2,
+        hashed_password = $3,
+        username = $4,
+        is_verified = $5,
+        is_deleted = $6,
+        deleted_at = $7,
+        updated_at = now_utc()
+      WHERE id = $1
+      `,
+        [
+          id,
+          user.email.toString(),
+          user.passwordHash.toString(),
+          user.username.toString(),
+          user.isVerified,
+          user.isDeleted ?? false,
+          user.deletedAt ?? null,
+        ],
+      );
+
+      // Update role (si cambió)
+      await this.syncRole(user);
+    }
+
+    const updated = await this.findById(Uuid.create(user.id));
+    if (!updated) {
+      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+        sourceType: "user",
+        id,
+      });
+    }
+
+    return updated;
+  }
+
   async findById(id: Uuid): Promise<User | null> {
     return this.findOneBy("WHERE u.id = $1", [id.toString()]);
   }
@@ -211,38 +348,38 @@ export default class UserRepo implements IUser {
     }
   }
 
-  async softDelete(email: Email, at?: Date): Promise<void> {
+  async softDelete(id: Uuid, at?: Date): Promise<void> {
     const res = await this.db.query(
       `UPDATE auth.users
        SET is_deleted = true,
            deleted_at = COALESCE($2, now_utc()),
            updated_at = now_utc()
        WHERE email = $1`,
-      [email.toString(), at ?? null],
+      [id.toString(), at ?? null],
     );
 
     if (res.rowCount === 0) {
       throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
-        id: email.toString(),
+        id: id.toString(),
       });
     }
   }
 
-  async restore(email: Email): Promise<void> {
+  async restore(id: Uuid, at?: Date): Promise<void> {
     const res = await this.db.query(
       `UPDATE auth.users
        SET is_deleted = false,
            deleted_at = NULL,
            updated_at = now_utc()
        WHERE email = $1`,
-      [email.toString()],
+      [id.toString()],
     );
 
     if (res.rowCount === 0) {
       throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
-        id: email.toString(),
+        id: id.toString(),
       });
     }
   }

@@ -1,0 +1,29 @@
+import { Email, User } from "../../../domain/aggregates/User";
+import { LoginDTO } from "../../../presentation/security/Login.dto";
+import { SharedErrorFactory } from "../../../utils/errors/Error.map";
+import { IHasher } from "../../interfaces/Hasher.port";
+import { IUser } from "../../interfaces/User.port";
+
+export class LoginUser {
+  constructor(
+    private readonly repo: IUser,
+    private readonly hasher: IHasher,
+  ) {}
+
+  async execute(dto: LoginDTO): Promise<User> {
+    const exist = await this.repo.findByEmail(Email.create(dto.email));
+
+    const passwordHash = exist?.passwordHash ?? "$2b$10$invalidhashforcompare";
+
+    const comparedPass = await this.hasher.compare(
+      dto.rawPassword,
+      passwordHash,
+    );
+
+    if (!exist || !comparedPass) {
+      throw SharedErrorFactory.presentation("SHARED.INVALID_CREDENTIALS");
+    }
+
+    return exist;
+  }
+}

@@ -12,12 +12,13 @@ export function UserRoutes(
     {
       method: "get",
       path: "/health",
-      before: [
-        auth.requireAuth(),
-        auth.requireRoles("Admin"),
-        // scope.sameUserParam("userId"),
-      ],
+      before: [auth.requireAuth(), auth.requireRoles("Admin")],
       handler: ctrl.health,
+    },
+    {
+      method: "post",
+      path: "login",
+      handler: ctrl.health, // swith to ctr.login
     },
   ];
 }
