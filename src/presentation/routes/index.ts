@@ -1,10 +1,9 @@
 import { RequestHandler, Router } from "express";
 import { API_VERSION } from "../../utils/constants";
-import { makeAuth } from "../middlewares/auth";
-import { makeScope } from "../middlewares/scope";
 import { UserController } from "../controllers/User.controller";
 import { UserRoutes } from "./User.routes";
-import { AuthService } from "../../app/app-services/users/Auth.service";
+import { AuthMiddleware } from "../middlewares/Auth.middleware";
+import { ScopeMiddleware } from "../middlewares/scope";
 
 export type ExpressHandler = RequestHandler;
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
@@ -33,17 +32,18 @@ function registerRoutes(
   }
 }
 
-export function buildApiRouter(): Router {
+export function buildApiRouter(deps: {
+  userController: UserController;
+  auth: AuthMiddleware;
+  scope: ScopeMiddleware;
+}): Router {
   const router = Router();
-  const auth = makeAuth();
-  const scope = makeScope();
-
   const base = `/api/v${API_VERSION}`;
 
   registerRoutes(
     router,
     `${base}/user`,
-    UserRoutes(new UserController(new AuthService()), auth, scope),
+    UserRoutes(deps.userController, deps.auth, deps.scope),
   );
 
   registerRoutes(router, `${base}/galaxy`, []);

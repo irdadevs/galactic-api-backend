@@ -13,7 +13,7 @@ export type JwtClaims = {
 
 const ALG: Algorithm = "HS256";
 
-export default class JWTRepo implements IJWT {
+export default class JwtService implements IJWT {
   constructor() {}
 
   private mustGetSecret() {

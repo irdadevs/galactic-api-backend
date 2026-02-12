@@ -13,14 +13,22 @@ import { PgUnitOfWorkFactory } from "./infra/db/PostgresUoW";
 import { RedisRepo } from "./infra/repos/Redis.repository";
 import { CONSOLE_COLORS } from "./utils/Chalk";
 import { buildApiRouter } from "./presentation/routes";
+import UserRepo from "./infra/repos/User.repository";
+import JwtService from "./infra/repos/Jwt.repository";
+import { AuthMiddleware } from "./presentation/middlewares/Auth.middleware";
+import { ScopeMiddleware } from "./presentation/middlewares/scope";
 
+// --------------------
+// Server config
+// --------------------
 const app = Express();
-
 const PORT = Number(process.env.PORT ?? 8080);
 const ENVIRONMENT = process.env.NODE_ENV ?? "dev";
 const IS_PROD = ENVIRONMENT === "production";
 
-// middleware
+// --------------------
+// Global middlewares
+// --------------------
 app.set("trust proxy", 1);
 app.use(Express.json());
 app.use(cors());
@@ -35,15 +43,22 @@ app.use(
   }),
 );
 app.use(morgan(IS_PROD ? "combined" : "dev"));
-app.use(buildApiRouter());
 
-// infra singletons
+// --------------------
+// Infra singletons (will be used for DI)
+// --------------------
 let postgres: PgPoolQueryable;
 let uowFactory: PgUnitOfWorkFactory;
 let cache: RedisRepo;
 
+// --------------------
+// Start server & composition root wiring
+// --------------------
 async function start(): Promise<void> {
   try {
+    // --------------------
+    // 1️⃣ Initialize infrastructure layer
+    // --------------------
     postgres = await PgPoolQueryable.connect(
       {
         connectionString: process.env.DATABASE_URL,
@@ -62,28 +77,67 @@ async function start(): Promise<void> {
       keyPrefix: ENVIRONMENT,
     });
 
+    // --------------------
+    // 2️⃣ Composition root wiring
+    // --------------------
+    // TODO: Here we will instanciate all that needs DI:
+    //! Infra layer (repos)
+    const userRepo = new UserRepo(postgres);
+    const jwtService = new JwtService();
+    //! App layer
+    // Use-cases
+    // App-services
+    //! Presentation layer
+    // Controllers
+    // const userController = new UserController(healthCheck, authService, lifecycleService);
+    // Middlewares
+    const authMiddleware = new AuthMiddleware(jwtService, {
+      issuer: process.env.JWT_ISSUER!,
+      audience: process.env.JWT_AUDIENCE!,
+    });
+    const scopeMiddleware = new ScopeMiddleware();
+    // Routers
+    app.use(
+      buildApiRouter({
+        userController,
+        auth: authMiddleware,
+        scope: scopeMiddleware,
+      }),
+    );
+
+    console.log(
+      `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.successColor(
+        "✅ Composition root wiring finished",
+      )}`,
+    );
+
+    // --------------------
+    // 3️⃣ Start listening
+    // --------------------
     app.listen(PORT, () => {
       console.log(
         `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.successColor(
-          `listening on port ${PORT}`,
+          `Listening on port ${PORT}`,
         )}`,
       );
     });
   } catch (e) {
     console.error(
       `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
-        `failed to start: ${e instanceof Error ? e.message : String(e)}`,
+        `Failed to start: ${e instanceof Error ? e.message : String(e)}`,
       )}`,
     );
     process.exit(1);
   }
 }
 
-// ---- graceful shutdown ----
+// --------------------
+// Graceful shutdown
+// --------------------
 const shutdown = async (signal: string) => {
   console.log(
     `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.warningColor(
-      `🛑shutdown signal ${signal} received`,
+      `🛑 Shutdown signal ${signal} received`,
     )}`,
   );
   try {
@@ -93,7 +147,7 @@ const shutdown = async (signal: string) => {
   } catch (e) {
     console.error(
       `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
-        `❌shutdown error: ${e instanceof Error ? e.message : String(e)}`,
+        `❌ Shutdown error: ${e instanceof Error ? e.message : String(e)}`,
       )}`,
     );
     process.exit(1);
@@ -103,14 +157,19 @@ const shutdown = async (signal: string) => {
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
+// --------------------
+// Bootstrap
+// --------------------
 start().catch((e) => {
   console.error(
     `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.errorColor(
-      `❌bootstrap error: ${e instanceof Error ? e.message : String(e)}`,
+      `❌ Bootstrap error: ${e instanceof Error ? e.message : String(e)}`,
     )}`,
   );
   process.exit(1);
 });
 
-// OPTIONAL: export infra for DI
+// --------------------
+// Export infra for DI if needed
+// --------------------
 export { postgres, uowFactory, cache };
