@@ -1,6 +1,6 @@
 // platform/http/auth.ts
 import { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../security/JWT";
+import { verifyToken } from "../../infra/repos/Jwt.repository";
 import { Uuid } from "../../domain/aggregates/User";
 
 /** Pull Bearer token from Authorization header */
@@ -12,7 +12,7 @@ function getBearer(req: Request): string | null {
   return token;
 }
 
-/** Factory creates middlewares with access to DI container */
+/** Factory creates middlewares */
 export function makeAuth() {
   /** Hard authentication: 401 if no/invalid token */
   function requireAuth() {

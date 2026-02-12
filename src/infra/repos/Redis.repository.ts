@@ -1,6 +1,6 @@
 import { createClient, RedisClientType } from "redis";
-import { Cache, DEFAULT_TTL } from "../config/cache/Cache";
-import { CONSOLE_COLORS } from "../utils/Chalk";
+import { ICache, DEFAULT_TTL } from "../../app/interfaces/Cache.port";
+import { CONSOLE_COLORS } from "../../utils/Chalk";
 
 export type RedisOptions = {
   url?: string; // e.g. redis://localhost:6379
@@ -9,7 +9,7 @@ export type RedisOptions = {
   keyPrefix?: string; // multi-tenant, env, etc.
 };
 
-export class RedisAdapter implements Cache {
+export class RedisRepo implements ICache {
   private client: RedisClientType;
   private prefix: string;
 
@@ -45,7 +45,7 @@ export class RedisAdapter implements Cache {
     const raw = await this.client.get(this.k(key));
     if (!raw) return null;
     try {
-      return JSON.parse(raw) as T;
+      return JSON.parse(raw as string) as T;
     } catch {
       return null;
     }

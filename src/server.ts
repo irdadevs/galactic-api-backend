@@ -10,7 +10,7 @@ import rateLimit from "express-rate-limit";
 
 import { PgPoolQueryable } from "./infra/db/Postgres";
 import { PgUnitOfWorkFactory } from "./infra/db/PostgresUoW";
-import { RedisAdapter } from "./infra/RedisAdapter";
+import { RedisRepo } from "./infra/repos/Redis.repository";
 import { CONSOLE_COLORS } from "./utils/Chalk";
 import { buildApiRouter } from "./presentation/routes";
 
@@ -40,7 +40,7 @@ app.use(buildApiRouter());
 // infra singletons
 let postgres: PgPoolQueryable;
 let uowFactory: PgUnitOfWorkFactory;
-let cache: RedisAdapter;
+let cache: RedisRepo;
 
 async function start(): Promise<void> {
   try {
@@ -58,7 +58,7 @@ async function start(): Promise<void> {
 
     uowFactory = new PgUnitOfWorkFactory(postgres._getPool());
 
-    cache = new RedisAdapter({
+    cache = new RedisRepo({
       keyPrefix: ENVIRONMENT,
     });
 

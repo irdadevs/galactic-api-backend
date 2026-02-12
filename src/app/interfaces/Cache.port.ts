@@ -1,4 +1,4 @@
-export interface Cache {
+export interface ICache {
   get<T = unknown>(key: string): Promise<T | null>;
   set<T = unknown>(key: string, value: T, ttlSec?: number): Promise<void>;
   del(key: string): Promise<void>;

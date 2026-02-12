@@ -4,6 +4,7 @@ import { makeAuth } from "../middlewares/auth";
 import { makeScope } from "../middlewares/scope";
 import { UserController } from "../controllers/User.controller";
 import { UserRoutes } from "./User.routes";
+import { AuthService } from "../../app/app-services/users/Auth.service";
 
 export type ExpressHandler = RequestHandler;
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
@@ -42,7 +43,7 @@ export function buildApiRouter(): Router {
   registerRoutes(
     router,
     `${base}/user`,
-    UserRoutes(new UserController(), auth, scope),
+    UserRoutes(new UserController(new AuthService()), auth, scope),
   );
 
   registerRoutes(router, `${base}/galaxy`, []);

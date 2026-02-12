@@ -1,6 +1,5 @@
 import type { RouteDef } from ".";
 import { UserController } from "../controllers/User.controller";
-import { authHealthHandler } from "../handlers/authHealth.handler";
 
 type Guards = ReturnType<typeof import("../middlewares/auth").makeAuth>;
 
@@ -21,7 +20,7 @@ export function UserRoutes(
         auth.requireRoles("Admin"),
         // ...scope.sameUserParam("userId"), This is just for remembering, implement when tenant isolationis needed
       ],
-      handler: authHealthHandler,
+      handler: ctrl.health,
     },
   ];
 }
