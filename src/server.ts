@@ -16,7 +16,7 @@ import { buildApiRouter } from "./presentation/routes";
 import UserRepo from "./infra/repos/User.repository";
 import JwtService from "./infra/repos/Jwt.repository";
 import { AuthMiddleware } from "./presentation/middlewares/Auth.middleware";
-import { ScopeMiddleware } from "./presentation/middlewares/scope";
+import { ScopeMiddleware } from "./presentation/middlewares/Scope.middleware.ts";
 import { SessionRepo } from "./infra/repos/Session.repository";
 import { LoginUser } from "./app/use-cases/commands/LoginUser.command";
 import { HasherRepo } from "./infra/repos/Hasher.repository";

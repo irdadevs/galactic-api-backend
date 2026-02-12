@@ -1,16 +1,13 @@
 // presentation/middlewares/AuthMiddleware.ts
 
 import { Request, Response, NextFunction } from "express";
-import { IJWT } from "../../app/interfaces/Jwt.port";
+import { IJWT, JwtOpts } from "../../app/interfaces/Jwt.port";
 import { Uuid } from "../../domain/aggregates/User";
 
 export class AuthMiddleware {
   constructor(
     private readonly jwt: IJWT,
-    private readonly config: {
-      issuer?: string;
-      audience?: string;
-    },
+    private readonly config: JwtOpts,
   ) {}
 
   private getBearer(req: Request): string | null {
@@ -28,7 +25,7 @@ export class AuthMiddleware {
         if (!token)
           return res.status(401).json({ ok: false, error: "UNAUTHORIZED" });
 
-        const claims = this.jwt.verifyToken(token, this.config);
+        const claims = this.jwt.verifyAccessToken(token);
 
         if (!Uuid.isValid(claims.sub))
           return res.status(401).json({ ok: false, error: "INVALID_TOKEN" });

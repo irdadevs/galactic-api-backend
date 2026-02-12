@@ -8,6 +8,11 @@ export type JwtClaims = {
   exp?: number;
 };
 
+export type JwtOpts = {
+  issuer?: string;
+  audience?: string;
+};
+
 export interface IJWT {
   signAccessToken(claims: Omit<JwtClaims, "iat" | "exp">): string;
 

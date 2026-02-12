@@ -1,6 +1,6 @@
 import jwt, { Algorithm, SignOptions, VerifyOptions } from "jsonwebtoken";
 import { SharedErrorFactory } from "../../utils/errors/Error.map";
-import { IJWT, JwtClaims } from "../../app/interfaces/Jwt.port";
+import { IJWT, JwtClaims, JwtOpts } from "../../app/interfaces/Jwt.port";
 import { TOKEN_TIMES_MAP } from "../../utils/TokenTimes.map";
 
 const ALG: Algorithm = "HS256";

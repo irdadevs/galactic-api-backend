@@ -1,7 +1,7 @@
 import type { RouteDef } from ".";
 import { UserController } from "../controllers/User.controller";
 import { AuthMiddleware } from "../middlewares/Auth.middleware";
-import { ScopeMiddleware } from "../middlewares/scope";
+import { ScopeMiddleware } from "../middlewares/Scope.middleware.ts";
 
 export function UserRoutes(
   ctrl: UserController,

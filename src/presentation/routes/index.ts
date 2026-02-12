@@ -3,7 +3,7 @@ import { API_VERSION } from "../../utils/constants";
 import { UserController } from "../controllers/User.controller";
 import { UserRoutes } from "./User.routes";
 import { AuthMiddleware } from "../middlewares/Auth.middleware";
-import { ScopeMiddleware } from "../middlewares/scope";
+import { ScopeMiddleware } from "../middlewares/Scope.middleware.ts";
 
 export type ExpressHandler = RequestHandler;
 export type HttpMethod = "get" | "post" | "put" | "patch" | "delete";
