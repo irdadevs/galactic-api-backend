@@ -1,4 +1,3 @@
-// platform/http/auth.ts
 import { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../../infra/repos/Jwt.repository";
 import { Uuid } from "../../domain/aggregates/User";

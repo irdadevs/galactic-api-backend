@@ -13,7 +13,7 @@ export class AuthService {
   }
 
   signup(dto: SignupDTO) {
-    return this.signup.execute(dto);
+    return this.signupUser.execute(dto);
   }
 
   verify(dto: VerifyDTO) {
@@ -21,14 +21,14 @@ export class AuthService {
   }
 
   changeEmail(dto: ChangeEmailDTO) {
-    return this.changeEmail.execute(dto);
+    return this.changeEmailUser.execute(dto);
   }
 
   changePassword(dto: ChangePasswordDTO) {
-    return this.changePassword.execute(dto);
+    return this.changePasswordUser.execute(dto);
   }
 
   changeUsername(dto: ChangeUsernameDTO) {
-    return this.changeUsername.execute(dto);
+    return this.changeUsernameUser.execute(dto);
   }
 }
