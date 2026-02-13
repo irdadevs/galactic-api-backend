@@ -59,6 +59,7 @@ export class UserController {
           id: result.user.id,
           email: result.user.email,
           role: result.user.role,
+          verified: result.user.isVerified,
         },
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,

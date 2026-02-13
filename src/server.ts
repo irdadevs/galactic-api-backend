@@ -174,7 +174,8 @@ async function start(): Promise<void> {
         "✅ Composition root wiring finished",
       )}`,
     );
-    //
+    app.disable("x-powered-by");
+
     // --------------------
     // 3️⃣ Start listening
     // --------------------
