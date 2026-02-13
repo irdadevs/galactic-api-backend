@@ -1,5 +1,5 @@
 import { Dice } from "../../utils/Dice.class";
-import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import { generateCelestialName } from "../../utils/nameGenerator";
 import { REGEXP } from "../../utils/Regexp";
 import { Uuid } from "./User";
@@ -70,7 +70,7 @@ export class MoonName {
   static create(value: string): MoonName {
     const normalized = value.trim();
     if (!REGEXP.planetName.test(normalized)) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_MOON_NAME", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_MOON_NAME", {
         name: value,
       });
     }
@@ -93,7 +93,7 @@ export class MoonSizeValue {
   static create(value: string): MoonSizeValue {
     const valid = ALLOWED_MOON_SIZES.includes(value as MoonSize);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_MOON_SIZE", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_MOON_SIZE", {
         size: value,
       });
     }
@@ -116,19 +116,19 @@ const randomBetween = (min: number, max: number): number => {
 
 const ensurePositive = (field: string, value: number): void => {
   if (!Number.isFinite(value) || value <= 0) {
-    throw DomainErrorFactory.domain("DOMAIN.INVALID_MOON_VALUE", { field });
+    throw ErrorFactory.domain("DOMAIN.INVALID_MOON_VALUE", { field });
   }
 };
 
 const ensureNonNegative = (field: string, value: number): void => {
   if (!Number.isFinite(value) || value < 0) {
-    throw DomainErrorFactory.domain("DOMAIN.INVALID_MOON_VALUE", { field });
+    throw ErrorFactory.domain("DOMAIN.INVALID_MOON_VALUE", { field });
   }
 };
 
 const ensureOrbital = (value: number): void => {
   if (!Number.isFinite(value) || value <= 0) {
-    throw DomainErrorFactory.domain("DOMAIN.INVALID_MOON_ORBITAL", {
+    throw ErrorFactory.domain("DOMAIN.INVALID_MOON_ORBITAL", {
       orbital: value,
     });
   }

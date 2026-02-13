@@ -1,6 +1,6 @@
 import { IAsteroid } from "../../app/interfaces/Asteroid.port";
 import { Queryable, QueryResultRow } from "../../config/db/Queryable";
-import { SharedErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import {
   Asteroid,
   AsteroidName,
@@ -47,14 +47,7 @@ export default class AsteroidRepo implements IAsteroid {
       )
       VALUES ($1, $2, $3, $4, $5, $6)
       `,
-      [
-        dto.id,
-        dto.system_id,
-        dto.name,
-        dto.type,
-        dto.size,
-        dto.orbital,
-      ],
+      [dto.id, dto.system_id, dto.name, dto.type, dto.size, dto.orbital],
     );
     return asteroid;
   }
@@ -89,14 +82,14 @@ export default class AsteroidRepo implements IAsteroid {
       [name.toString(), id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "asteroid",
         id: id.toString(),
       });
     }
     const asteroid = await this.findById(id);
     if (!asteroid) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "asteroid",
         id: id.toString(),
       });
@@ -110,14 +103,14 @@ export default class AsteroidRepo implements IAsteroid {
       [type, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "asteroid",
         id: id.toString(),
       });
     }
     const asteroid = await this.findById(id);
     if (!asteroid) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "asteroid",
         id: id.toString(),
       });
@@ -131,14 +124,14 @@ export default class AsteroidRepo implements IAsteroid {
       [size, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "asteroid",
         id: id.toString(),
       });
     }
     const asteroid = await this.findById(id);
     if (!asteroid) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "asteroid",
         id: id.toString(),
       });
@@ -152,14 +145,14 @@ export default class AsteroidRepo implements IAsteroid {
       [orbital, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "asteroid",
         id: id.toString(),
       });
     }
     const asteroid = await this.findById(id);
     if (!asteroid) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "asteroid",
         id: id.toString(),
       });
@@ -173,7 +166,7 @@ export default class AsteroidRepo implements IAsteroid {
       [id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "asteroid",
         id: id.toString(),
       });

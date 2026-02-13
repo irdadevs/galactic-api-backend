@@ -1,7 +1,7 @@
 import { IJWT } from "../../interfaces/Jwt.port";
 import { ISession } from "../../interfaces/Session.port";
 import { IHasher } from "../../interfaces/Hasher.port";
-import { SharedErrorFactory } from "../../../utils/errors/Error.map";
+import { ErrorFactory } from "../../../utils/errors/Error.map";
 
 export class RefreshSession {
   constructor(
@@ -14,17 +14,17 @@ export class RefreshSession {
     const claims = this.jwt.verifyRefreshToken(refreshToken);
 
     if (!claims.sessionId) {
-      throw SharedErrorFactory.presentation("AUTH.INVALID_REFRESH");
+      throw ErrorFactory.presentation("AUTH.INVALID_REFRESH");
     }
 
     const session = await this.sessionRepo.findById(claims.sessionId);
 
     if (!session || session.isRevoked) {
-      throw SharedErrorFactory.presentation("AUTH.SESSION_INVALID");
+      throw ErrorFactory.presentation("AUTH.SESSION_INVALID");
     }
 
     if (session.expiresAt < new Date()) {
-      throw SharedErrorFactory.presentation("AUTH.SESSION_EXPIRED");
+      throw ErrorFactory.presentation("AUTH.SESSION_EXPIRED");
     }
 
     const matches = await this.hasher.compare(
@@ -34,7 +34,7 @@ export class RefreshSession {
 
     if (!matches) {
       await this.sessionRepo.revoke(session.id);
-      throw SharedErrorFactory.presentation("AUTH.REFRESH_REUSED");
+      throw ErrorFactory.presentation("AUTH.REFRESH_REUSED");
     }
 
     // 🔁 ROTATION

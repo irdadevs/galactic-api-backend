@@ -1,4 +1,4 @@
-import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import { generateSpecialName, isSpecialName } from "../../utils/nameGenerator";
 import { Uuid } from "./User";
 
@@ -41,7 +41,7 @@ export class AsteroidName {
   static create(value: string): AsteroidName {
     const normalized = value.trim();
     if (!isSpecialName(normalized)) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_ASTEROID_NAME", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_ASTEROID_NAME", {
         name: value,
       });
     }
@@ -63,7 +63,7 @@ export class AsteroidTypeValue {
   static create(value: string): AsteroidTypeValue {
     const valid = ALLOWED_ASTEROID_TYPES.includes(value as AsteroidType);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_ASTEROID_TYPE", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_ASTEROID_TYPE", {
         type: value,
       });
     }
@@ -85,7 +85,7 @@ export class AsteroidSizeValue {
   static create(value: string): AsteroidSizeValue {
     const valid = ALLOWED_ASTEROID_SIZE.includes(value as AsteroidSize);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_ASTEROID_SIZE", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_ASTEROID_SIZE", {
         size: value,
       });
     }
@@ -106,7 +106,7 @@ const ensureOrbital = (value: number): void => {
     Number.isFinite(value) && value > 0 && Math.abs((value % 1) - 0.5) < 1e-9;
 
   if (!isValid) {
-    throw DomainErrorFactory.domain("DOMAIN.INVALID_ASTEROID_ORBITAL", {
+    throw ErrorFactory.domain("DOMAIN.INVALID_ASTEROID_ORBITAL", {
       orbital: value,
     });
   }

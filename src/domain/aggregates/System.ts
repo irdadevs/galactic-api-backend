@@ -1,4 +1,4 @@
-import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import { REGEXP } from "../../utils/Regexp";
 import { Uuid } from "./User";
 
@@ -33,7 +33,7 @@ export class SystemName {
   static create(value: string): SystemName {
     const normalized = value.trim();
     if (!REGEXP.systemName.test(normalized)) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_SYSTEM_NAME", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_SYSTEM_NAME", {
         name: value,
       });
     }
@@ -59,7 +59,7 @@ export class SystemPosition {
       Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
 
     if (!isValid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_SYSTEM_POSITION", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_SYSTEM_POSITION", {
         position: `${x},${y},${z}`,
       });
     }

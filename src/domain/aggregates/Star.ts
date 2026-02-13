@@ -1,5 +1,5 @@
 import { Dice } from "../../utils/Dice.class";
-import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import { generateCelestialName } from "../../utils/nameGenerator";
 import { REGEXP } from "../../utils/Regexp";
 import { Uuid } from "./User";
@@ -144,7 +144,7 @@ export class StarTypeValue {
   static create(value: string): StarTypeValue {
     const valid = ALLOWED_STAR_TYPES.includes(value as StarType);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_STAR_TYPE", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_STAR_TYPE", {
         type: value,
       });
     }
@@ -166,7 +166,7 @@ export class StarClassValue {
   static create(value: string): StarClassValue {
     const valid = ALLOWED_STAR_CLASS.includes(value as StarClass);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_STAR_CLASS", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_STAR_CLASS", {
         class: value,
       });
     }
@@ -188,7 +188,7 @@ export class StarColorValue {
   static create(value: string): StarColorValue {
     const valid = Object.values(STAR_CLASS_COLOR).includes(value as StarColor);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_STAR_COLOR", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_STAR_COLOR", {
         color: value,
       });
     }
@@ -210,7 +210,7 @@ export class StarName {
   static create(value: string): StarName {
     const normalized = value.trim();
     if (!REGEXP.planetName.test(normalized)) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_STAR_VALUE", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_STAR_VALUE", {
         field: "name",
       });
     }
@@ -274,13 +274,13 @@ const resolveColorForClass = (starClass: StarClass): StarColor =>
 
 const ensurePositive = (field: string, value: number): void => {
   if (!Number.isFinite(value) || value <= 0) {
-    throw DomainErrorFactory.domain("DOMAIN.INVALID_STAR_VALUE", { field });
+    throw ErrorFactory.domain("DOMAIN.INVALID_STAR_VALUE", { field });
   }
 };
 
 const ensureNonNegative = (field: string, value: number): void => {
   if (!Number.isFinite(value) || value < 0) {
-    throw DomainErrorFactory.domain("DOMAIN.INVALID_STAR_VALUE", { field });
+    throw ErrorFactory.domain("DOMAIN.INVALID_STAR_VALUE", { field });
   }
 };
 
@@ -299,7 +299,7 @@ export class Star {
       : StarClassValue.create(resolvedClass);
 
     if (starClass.toString() !== resolvedClass) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_STAR_CLASS", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_STAR_CLASS", {
         class: starClass.toString(),
       });
     }
@@ -309,7 +309,7 @@ export class Star {
       : StarColorValue.create(resolveColorForClass(starClass.toString()));
 
     if (color.toString() !== resolveColorForClass(starClass.toString())) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_STAR_COLOR", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_STAR_COLOR", {
         color: color.toString(),
       });
     }

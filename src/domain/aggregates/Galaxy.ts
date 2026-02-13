@@ -1,5 +1,5 @@
 import { Dice } from "../../utils/Dice.class";
-import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import { REGEXP } from "../../utils/Regexp";
 import { Uuid } from "./User";
 
@@ -45,7 +45,7 @@ export class GalaxyName {
   static create(value: string): GalaxyName {
     const normalized = value.trim();
     if (!REGEXP.galaxyName.test(normalized)) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_GALAXY_NAME", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_GALAXY_NAME", {
         name: value,
       });
     }
@@ -68,7 +68,7 @@ export class GalaxyShape {
   static create(value: string): GalaxyShape {
     const valid = ALLOWED_GALAXY_SHAPES.includes(value as GalaxyShapeValue);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_GALAXY_SHAPE", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_GALAXY_SHAPE", {
         shape: value,
       });
     }

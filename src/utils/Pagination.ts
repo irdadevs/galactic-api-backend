@@ -1,5 +1,5 @@
 import type { Queryable, QueryResultRow } from "../config/db/Queryable";
-import { SharedErrorFactory } from "./errors/Error.map";
+import { ErrorFactory } from "./errors/Error.map";
 
 export type OrderDir = "asc" | "desc";
 
@@ -34,8 +34,7 @@ export async function paginateFrom<T extends QueryResultRow = QueryResultRow>(
 ): Promise<{ rows: T[]; total: number }> {
   const select = opts.select ?? "*";
   const keys = Object.keys(opts.orderMap);
-  if (keys.length === 0)
-    throw SharedErrorFactory.infra("SHARED.ORDER_MAP_EMPTY");
+  if (keys.length === 0) throw ErrorFactory.infra("USERS.ORDER_MAP_EMPTY");
 
   const orderKey =
     opts.orderBy && opts.orderMap[opts.orderBy] ? opts.orderBy : keys[0];

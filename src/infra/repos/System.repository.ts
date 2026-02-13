@@ -1,7 +1,7 @@
 import { ISystem } from "../../app/interfaces/System.port";
 import { Queryable, QueryResultRow } from "../../config/db/Queryable";
 import { paginateFrom } from "../../utils/Pagination";
-import { SharedErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import {
   System,
   SystemName,
@@ -101,7 +101,7 @@ export default class SystemRepo implements ISystem {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "system",
         id: id.toString(),
       });
@@ -109,7 +109,7 @@ export default class SystemRepo implements ISystem {
 
     const system = await this.findById(id);
     if (!system) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "system",
         id: id.toString(),
       });
@@ -129,7 +129,7 @@ export default class SystemRepo implements ISystem {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "system",
         id: id.toString(),
       });
@@ -137,7 +137,7 @@ export default class SystemRepo implements ISystem {
 
     const system = await this.findById(id);
     if (!system) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "system",
         id: id.toString(),
       });
@@ -151,7 +151,7 @@ export default class SystemRepo implements ISystem {
       [id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "system",
         id: id.toString(),
       });

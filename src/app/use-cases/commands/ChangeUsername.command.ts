@@ -1,6 +1,6 @@
 import { Username, Uuid } from "../../../domain/aggregates/User";
 import { ChangeUsernameDTO } from "../../../presentation/security/ChangeUsername.dto";
-import { SharedErrorFactory } from "../../../utils/errors/Error.map";
+import { ErrorFactory } from "../../../utils/errors/Error.map";
 import { IUser } from "../../interfaces/User.port";
 
 export class ChangeUsername {
@@ -10,7 +10,7 @@ export class ChangeUsername {
     const user = await this.userRepo.findById(Uuid.create(dto.userId));
 
     if (!user) {
-      throw SharedErrorFactory.presentation("SHARED.NOT_FOUND", {
+      throw ErrorFactory.presentation("SHARED.NOT_FOUND", {
         id: dto.userId,
       });
     }
@@ -20,7 +20,7 @@ export class ChangeUsername {
     );
 
     if (existing) {
-      throw SharedErrorFactory.presentation("SHARED.USERNAME_EXIST", {
+      throw ErrorFactory.presentation("USERS.USERNAME_EXIST_CHANGE", {
         username: dto.newUsername,
       });
     }

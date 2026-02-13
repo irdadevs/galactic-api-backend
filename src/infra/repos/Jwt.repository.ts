@@ -1,6 +1,6 @@
 import jwt, { Algorithm, SignOptions, VerifyOptions } from "jsonwebtoken";
-import { SharedErrorFactory } from "../../utils/errors/Error.map";
-import { IJWT, JwtClaims, JwtOpts } from "../../app/interfaces/Jwt.port";
+import { ErrorFactory } from "../../utils/errors/Error.map";
+import { IJWT, JwtClaims } from "../../app/interfaces/Jwt.port";
 import { TOKEN_TIMES_MAP } from "../../utils/TokenTimes.map";
 
 const ALG: Algorithm = "HS256";
@@ -21,7 +21,7 @@ export default class JwtService implements IJWT {
   private mustGetEnv(key: string): string {
     const value = process.env[key];
     if (!value) {
-      throw SharedErrorFactory.presentation("SHARED.INVALID_SECRET", {
+      throw ErrorFactory.presentation("AUTH.INVALID_SECRET", {
         key,
       });
     }

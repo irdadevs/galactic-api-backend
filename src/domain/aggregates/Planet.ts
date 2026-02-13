@@ -1,5 +1,5 @@
 import { Dice } from "../../utils/Dice.class";
-import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import { generateCelestialName } from "../../utils/nameGenerator";
 import { REGEXP } from "../../utils/Regexp";
 import { Uuid } from "./User";
@@ -107,7 +107,7 @@ export class PlanetName {
   static create(value: string): PlanetName {
     const normalized = value.trim();
     if (!REGEXP.planetName.test(normalized)) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_PLANET_NAME", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_PLANET_NAME", {
         name: value,
       });
     }
@@ -130,7 +130,7 @@ export class PlanetTypeValue {
   static create(value: string): PlanetTypeValue {
     const valid = ALLOWED_PLANET_TYPES.includes(value as PlanetType);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_PLANET_TYPE", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_PLANET_TYPE", {
         type: value,
       });
     }
@@ -152,7 +152,7 @@ export class PlanetSizeValue {
   static create(value: string): PlanetSizeValue {
     const valid = ALLOWED_PLANET_SIZES.includes(value as PlanetSize);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_PLANET_SIZE", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_PLANET_SIZE", {
         size: value,
       });
     }
@@ -174,7 +174,7 @@ export class PlanetBiomeValue {
   static create(value: string): PlanetBiomeValue {
     const valid = ALLOWED_PLANET_BIOMES.includes(value as PlanetBiome);
     if (!valid) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_PLANET_BIOME", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_PLANET_BIOME", {
         biome: value,
       });
     }
@@ -197,13 +197,13 @@ const randomBetween = (min: number, max: number): number => {
 
 const ensurePositive = (field: string, value: number): void => {
   if (!Number.isFinite(value) || value <= 0) {
-    throw DomainErrorFactory.domain("DOMAIN.INVALID_PLANET_VALUE", { field });
+    throw ErrorFactory.domain("DOMAIN.INVALID_PLANET_VALUE", { field });
   }
 };
 
 const ensureNonNegative = (field: string, value: number): void => {
   if (!Number.isFinite(value) || value < 0) {
-    throw DomainErrorFactory.domain("DOMAIN.INVALID_PLANET_VALUE", { field });
+    throw ErrorFactory.domain("DOMAIN.INVALID_PLANET_VALUE", { field });
   }
 };
 
@@ -230,7 +230,8 @@ export class Planet {
     const relativeRadius =
       input.relativeRadius ?? randomBetween(radiusRange[0], radiusRange[1]);
     const temperature =
-      input.temperature ?? randomBetween(temperatureRange[0], temperatureRange[1]);
+      input.temperature ??
+      randomBetween(temperatureRange[0], temperatureRange[1]);
 
     ensurePositive("relativeMass", relativeMass);
     ensurePositive("relativeRadius", relativeRadius);

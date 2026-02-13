@@ -1,6 +1,6 @@
 import { IUser } from "../../interfaces/User.port";
 import { IHasher } from "../../interfaces/Hasher.port";
-import { SharedErrorFactory } from "../../../utils/errors/Error.map";
+import { ErrorFactory } from "../../../utils/errors/Error.map";
 import { ISession } from "../../interfaces/Session.port";
 import { ChangePasswordDTO } from "../../../presentation/security/ChangePassword.dto";
 import { Uuid } from "../../../domain/aggregates/User";
@@ -16,7 +16,7 @@ export class ChangePassword {
     const user = await this.userRepo.findById(Uuid.create(dto.userId));
 
     if (!user) {
-      throw SharedErrorFactory.presentation("SHARED.NOT_FOUND", {
+      throw ErrorFactory.presentation("SHARED.NOT_FOUND", {
         id: dto.userId,
       });
     }

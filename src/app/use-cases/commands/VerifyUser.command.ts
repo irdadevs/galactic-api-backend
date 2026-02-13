@@ -1,6 +1,6 @@
 import { Email } from "../../../domain/aggregates/User";
 import { VerifyDTO } from "../../../presentation/security/Verify.dto";
-import { SharedErrorFactory } from "../../../utils/errors/Error.map";
+import { ErrorFactory } from "../../../utils/errors/Error.map";
 import { IUser } from "../../interfaces/User.port";
 
 export class VerifyUser {
@@ -10,7 +10,7 @@ export class VerifyUser {
     const user = await this.userRepo.findByEmail(Email.create(dto.email));
 
     if (!user) {
-      throw SharedErrorFactory.presentation("SHARED.NOT_FOUND", {
+      throw ErrorFactory.presentation("SHARED.NOT_FOUND", {
         email: dto.email,
       });
     }

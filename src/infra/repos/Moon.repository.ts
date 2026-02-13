@@ -1,6 +1,6 @@
 import { IMoon } from "../../app/interfaces/Moon.port";
 import { Queryable, QueryResultRow } from "../../config/db/Queryable";
-import { SharedErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import { Moon, MoonName, MoonSize } from "../../domain/aggregates/Moon";
 import { Uuid } from "../../domain/aggregates/User";
 
@@ -91,9 +91,7 @@ export default class MoonRepo implements IMoon {
     return this.findOneBy("WHERE id = $1", [id.toString()]);
   }
 
-  async findByPlanet(
-    planetId: Uuid,
-  ): Promise<{ rows: Moon[]; total: number }> {
+  async findByPlanet(planetId: Uuid): Promise<{ rows: Moon[]; total: number }> {
     const query = await this.db.query(
       `
       SELECT
@@ -128,14 +126,14 @@ export default class MoonRepo implements IMoon {
       [name.toString(), id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "moon",
         id: id.toString(),
       });
     }
     const moon = await this.findById(id);
     if (!moon) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "moon",
         id: id.toString(),
       });
@@ -149,14 +147,14 @@ export default class MoonRepo implements IMoon {
       [size, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "moon",
         id: id.toString(),
       });
     }
     const moon = await this.findById(id);
     if (!moon) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "moon",
         id: id.toString(),
       });
@@ -170,14 +168,14 @@ export default class MoonRepo implements IMoon {
       [orbital, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "moon",
         id: id.toString(),
       });
     }
     const moon = await this.findById(id);
     if (!moon) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "moon",
         id: id.toString(),
       });
@@ -191,7 +189,7 @@ export default class MoonRepo implements IMoon {
       [id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "moon",
         id: id.toString(),
       });

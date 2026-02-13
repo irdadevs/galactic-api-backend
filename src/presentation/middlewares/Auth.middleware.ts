@@ -7,7 +7,7 @@ import { Uuid } from "../../domain/aggregates/User";
 export class AuthMiddleware {
   constructor(
     private readonly jwt: IJWT,
-    private readonly config: JwtOpts,
+    private readonly opts: JwtOpts,
   ) {}
 
   private getBearer(req: Request): string | null {

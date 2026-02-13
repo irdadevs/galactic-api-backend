@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { DomainErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import { REGEXP } from "../../utils/Regexp";
 
 export type UserRole = "User" | "Admin";
@@ -46,7 +46,7 @@ export class Uuid {
   static create(value?: string): Uuid {
     const id = value ?? randomUUID();
     if (!Uuid.isValid(id)) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_USER_ID", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_USER_ID", {
         id,
       });
     }
@@ -72,7 +72,7 @@ export class Email {
   static create(value: string): Email {
     const normalized = value.trim().toLowerCase();
     if (!REGEXP.email.test(normalized)) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_USER_EMAIL", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_USER_EMAIL", {
         email: value,
       });
     }
@@ -94,7 +94,7 @@ export class PasswordHash {
   static create(value: string): PasswordHash {
     const normalized = value.trim();
     if (normalized.length < 10) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_USER_PASSWORD", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_USER_PASSWORD", {
         password: value,
       });
     }
@@ -112,7 +112,7 @@ export class Username {
   static create(value: string): Username {
     const normalized = value.trim();
     if (!REGEXP.username.test(normalized)) {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_USER_USERNAME", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_USER_USERNAME", {
         username: value,
       });
     }
@@ -133,7 +133,7 @@ export class Role {
 
   static create(value: UserRole): Role {
     if (value !== "User" && value !== "Admin") {
-      throw DomainErrorFactory.domain("DOMAIN.INVALID_USER_ROLE", {
+      throw ErrorFactory.domain("DOMAIN.INVALID_USER_ROLE", {
         role: value,
       });
     }

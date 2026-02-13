@@ -1,7 +1,7 @@
 import { IUser, ListUsersQuery } from "../../app/interfaces/User.port";
 import { Queryable, QueryResultRow } from "../../config/db/Queryable";
 import { paginateFrom } from "../../utils/Pagination";
-import { SharedErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import {
   Email,
   PasswordHash,
@@ -62,7 +62,7 @@ export default class UserRepo implements IUser {
     );
 
     if (roleRes.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "role",
         id: user.role,
       });
@@ -86,7 +86,7 @@ export default class UserRepo implements IUser {
     );
 
     if (roleRes.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "role",
         id: user.role,
       });
@@ -183,7 +183,7 @@ export default class UserRepo implements IUser {
 
     const updated = await this.findById(Uuid.create(user.id));
     if (!updated) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id,
       });
@@ -213,7 +213,7 @@ export default class UserRepo implements IUser {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id: id.toString(),
       });
@@ -221,7 +221,7 @@ export default class UserRepo implements IUser {
 
     const user = await this.findById(id);
     if (!user) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id: id.toString(),
       });
@@ -238,7 +238,7 @@ export default class UserRepo implements IUser {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id: id.toString(),
       });
@@ -246,7 +246,7 @@ export default class UserRepo implements IUser {
 
     const user = await this.findById(id);
     if (!user) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id: id.toString(),
       });
@@ -263,7 +263,7 @@ export default class UserRepo implements IUser {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id: id.toString(),
       });
@@ -271,7 +271,7 @@ export default class UserRepo implements IUser {
 
     const user = await this.findById(id);
     if (!user) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id: id.toString(),
       });
@@ -341,7 +341,7 @@ export default class UserRepo implements IUser {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id: email.toString(),
       });
@@ -359,7 +359,7 @@ export default class UserRepo implements IUser {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id: id.toString(),
       });
@@ -377,7 +377,7 @@ export default class UserRepo implements IUser {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "user",
         id: id.toString(),
       });

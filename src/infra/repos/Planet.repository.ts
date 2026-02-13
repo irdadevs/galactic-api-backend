@@ -1,6 +1,6 @@
 import { IPlanet } from "../../app/interfaces/Planet.port";
 import { Queryable, QueryResultRow } from "../../config/db/Queryable";
-import { SharedErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import {
   Planet,
   PlanetBiome,
@@ -144,14 +144,14 @@ export default class PlanetRepo implements IPlanet {
       [name.toString(), id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "planet",
         id: id.toString(),
       });
     }
     const planet = await this.findById(id);
     if (!planet) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "planet",
         id: id.toString(),
       });
@@ -165,14 +165,14 @@ export default class PlanetRepo implements IPlanet {
       [orbital, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "planet",
         id: id.toString(),
       });
     }
     const planet = await this.findById(id);
     if (!planet) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "planet",
         id: id.toString(),
       });
@@ -186,14 +186,14 @@ export default class PlanetRepo implements IPlanet {
       [biome, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "planet",
         id: id.toString(),
       });
     }
     const planet = await this.findById(id);
     if (!planet) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "planet",
         id: id.toString(),
       });
@@ -207,7 +207,7 @@ export default class PlanetRepo implements IPlanet {
       [id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "planet",
         id: id.toString(),
       });

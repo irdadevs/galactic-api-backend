@@ -1,7 +1,7 @@
 import { IGalaxy, ListGalaxyQuery } from "../../app/interfaces/Galaxy.port";
 import { Queryable, QueryResultRow } from "../../config/db/Queryable";
 import { paginateFrom } from "../../utils/Pagination";
-import { SharedErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import {
   Galaxy,
   GalaxyName,
@@ -126,7 +126,7 @@ export default class GalaxyRepo implements IGalaxy {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "galaxy",
         id: id.toString(),
       });
@@ -134,7 +134,7 @@ export default class GalaxyRepo implements IGalaxy {
 
     const galaxy = await this.findById(id);
     if (!galaxy) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "galaxy",
         id: id.toString(),
       });
@@ -149,7 +149,7 @@ export default class GalaxyRepo implements IGalaxy {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "galaxy",
         id: id.toString(),
       });
@@ -157,7 +157,7 @@ export default class GalaxyRepo implements IGalaxy {
 
     const galaxy = await this.findById(id);
     if (!galaxy) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "galaxy",
         id: id.toString(),
       });
@@ -172,7 +172,7 @@ export default class GalaxyRepo implements IGalaxy {
     );
 
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "galaxy",
         id: id.toString(),
       });

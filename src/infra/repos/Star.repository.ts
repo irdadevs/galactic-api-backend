@@ -1,6 +1,6 @@
 import { IStar } from "../../app/interfaces/Star.port";
 import { Queryable, QueryResultRow } from "../../config/db/Queryable";
-import { SharedErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import {
   Star,
   StarName,
@@ -113,9 +113,7 @@ export default class StarRepo implements IStar {
     return this.findOneBy("WHERE id = $1", [id.toString()]);
   }
 
-  async findBySystem(
-    systemId: Uuid,
-  ): Promise<{ rows: Star[]; total: number }> {
+  async findBySystem(systemId: Uuid): Promise<{ rows: Star[]; total: number }> {
     const query = await this.db.query(
       `
       SELECT
@@ -154,14 +152,14 @@ export default class StarRepo implements IStar {
       [name.toString(), id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "star",
         id: id.toString(),
       });
     }
     const star = await this.findById(id);
     if (!star) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "star",
         id: id.toString(),
       });
@@ -175,14 +173,14 @@ export default class StarRepo implements IStar {
       [isMain, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "star",
         id: id.toString(),
       });
     }
     const star = await this.findById(id);
     if (!star) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "star",
         id: id.toString(),
       });
@@ -196,14 +194,14 @@ export default class StarRepo implements IStar {
       [orbital, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "star",
         id: id.toString(),
       });
     }
     const star = await this.findById(id);
     if (!star) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "star",
         id: id.toString(),
       });
@@ -217,14 +215,14 @@ export default class StarRepo implements IStar {
       [starterOrbital, id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "star",
         id: id.toString(),
       });
     }
     const star = await this.findById(id);
     if (!star) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "star",
         id: id.toString(),
       });
@@ -238,7 +236,7 @@ export default class StarRepo implements IStar {
       [id.toString()],
     );
     if (res.rowCount === 0) {
-      throw SharedErrorFactory.infra("SHARED.NOT_FOUND", {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
         sourceType: "star",
         id: id.toString(),
       });

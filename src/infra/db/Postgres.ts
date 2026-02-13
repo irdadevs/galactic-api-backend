@@ -6,7 +6,7 @@ import type {
   QueryResultRow,
   PgConfig,
 } from "../../config/db/Queryable";
-import { SharedErrorFactory } from "../../utils/errors/Error.map";
+import { ErrorFactory } from "../../utils/errors/Error.map";
 import { CONSOLE_COLORS } from "../../utils/Chalk";
 
 export type Logger = {
@@ -61,7 +61,7 @@ export class PgPoolQueryable implements Queryable {
             )}`,
           );
           await pool.end().catch(() => {});
-          throw SharedErrorFactory.infra("SHARED.DATABASE_CONNECTION");
+          throw ErrorFactory.infra("INFRA.DATABASE_CONNECTION");
         }
 
         const backoffMs = Math.min(1000 * 2 ** (attempt - 1), 10_000);

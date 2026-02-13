@@ -1,6 +1,6 @@
 import { Email, User } from "../../../domain/aggregates/User";
 import { LoginDTO } from "../../../presentation/security/Login.dto";
-import { SharedErrorFactory } from "../../../utils/errors/Error.map";
+import { ErrorFactory } from "../../../utils/errors/Error.map";
 import { IHasher } from "../../interfaces/Hasher.port";
 import { IUser } from "../../interfaces/User.port";
 
@@ -21,7 +21,7 @@ export class LoginUser {
     );
 
     if (!exist || !comparedPass) {
-      throw SharedErrorFactory.presentation("SHARED.INVALID_CREDENTIALS");
+      throw ErrorFactory.presentation("AUTH.INVALID_CREDENTIALS");
     }
 
     return exist;

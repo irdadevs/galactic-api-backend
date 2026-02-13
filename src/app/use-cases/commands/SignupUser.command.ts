@@ -2,7 +2,7 @@ import { IUser } from "../../interfaces/User.port";
 import { IHasher } from "../../interfaces/Hasher.port";
 import { SignupDTO } from "../../../presentation/security/Signup.dto";
 import { Email, User, Username } from "../../../domain/aggregates/User";
-import { SharedErrorFactory } from "../../../utils/errors/Error.map";
+import { ErrorFactory } from "../../../utils/errors/Error.map";
 
 export class SignupUser {
   constructor(
@@ -15,7 +15,7 @@ export class SignupUser {
       Email.create(dto.email),
     );
     if (existingByEmail) {
-      throw SharedErrorFactory.presentation("SHARED.EMAIL_EXIST", {
+      throw ErrorFactory.presentation("USERS.EMAIL_EXIST_SIGNUP", {
         email: dto.email,
       });
     }
@@ -24,7 +24,7 @@ export class SignupUser {
       Username.create(dto.username),
     );
     if (existingByUsername) {
-      throw SharedErrorFactory.presentation("SHARED.USERNAME_EXIST", {
+      throw ErrorFactory.presentation("USERS.USERNAME_EXIST_SIGNUP", {
         username: dto.username,
       });
     }
