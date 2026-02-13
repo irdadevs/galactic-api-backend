@@ -3,9 +3,23 @@ import { PlatformService } from "../../app/app-services/users/Platform.service";
 import { LifecycleService } from "../../app/app-services/users/Lifecycle.service";
 import { HealthQuery } from "../../app/use-cases/queries/Health.query";
 import { AuthService } from "../../app/app-services/users/Auth.service";
+import { ChangeEmailDTO } from "../security/ChangeEmail.dto";
+import { ChangePasswordDTO } from "../security/ChangePassword.dto";
+import { ChangeUsernameDTO } from "../security/ChangeUsername.dto";
 import { LoginDTO } from "../security/Login.dto";
+import { SignupDTO } from "../security/Signup.dto";
+import { VerifyDTO } from "../security/Verify.dto";
 import FindUser from "../../app/use-cases/queries/users/FindUser.query";
 import { ListUsers } from "../../app/use-cases/queries/users/ListUsers.query";
+import errorHandler from "../../utils/errors/Errors.handler";
+
+function invalidBody(res: Response, details: unknown) {
+  return res.status(400).json({
+    ok: false,
+    error: "INVALID_BODY",
+    details,
+  });
+}
 
 export class UserController {
   constructor(
@@ -18,22 +32,22 @@ export class UserController {
   ) {}
 
   public health = async (_req: Request, res: Response) => {
-    const result = await this.healthCheck.execute("auth");
-    return res.json(result);
+    try {
+      const result = await this.healthCheck.execute("auth");
+      return res.json(result);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
   };
 
-  async login(req: Request, res: Response) {
+  public login = async (req: Request, res: Response) => {
     try {
       const parsed = LoginDTO.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({
-          ok: false,
-          error: "INVALID_BODY",
-          details: parsed.error,
-        });
+        return invalidBody(res, parsed.error);
       }
 
-      const result = await this.authService.login(req.body, {
+      const result = await this.authService.login(parsed.data, {
         userAgent: req.headers["user-agent"],
         ip: req.ip,
       });
@@ -47,83 +61,164 @@ export class UserController {
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,
       });
-    } catch (err: any) {}
-  }
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-  async refresh(req: Request, res: Response) {
-    const { refreshToken } = req.body;
+  public refresh = async (req: Request, res: Response) => {
+    try {
+      const { refreshToken } = req.body;
+      const tokens = await this.authService.refresh(refreshToken);
 
-    const tokens = await this.authService.refresh(refreshToken);
+      return res.status(200).json(tokens);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-    return res.status(200).json(tokens);
-  }
+  public logout = async (req: Request, res: Response) => {
+    try {
+      const { sessionId } = req.body;
+      await this.authService.logout(sessionId);
 
-  async logout(req: Request, res: Response) {
-    const { sessionId } = req.body;
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-    await this.authService.logout(sessionId);
+  public logoutAll = async (req: Request, res: Response) => {
+    try {
+      await this.authService.logoutAll(req.auth.userId);
 
-    return res.status(204).send();
-  }
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-  async logoutAll(req: Request, res: Response) {
-    await this.authService.logoutAll(req.auth.userId);
+  public signup = async (req: Request, res: Response) => {
+    try {
+      const parsed = SignupDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return invalidBody(res, parsed.error);
+      }
 
-    return res.status(204).send();
-  }
+      const user = await this.platformService.signup(parsed.data);
 
-  async signup(req: Request, res: Response) {
-    const user = await this.platformService.signup(req.body);
+      return res.status(201).json(user);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-    return res.status(201).json(user);
-  }
+  public changeEmail = async (req: Request, res: Response) => {
+    try {
+      const parsed = ChangeEmailDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return invalidBody(res, parsed.error);
+      }
 
-  async changeEmail(req: Request, res: Response) {
-    await this.platformService.changeEmail(req.body);
-    return res.status(204).send();
-  }
+      await this.platformService.changeEmail(parsed.data);
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-  async changePassword(req: Request, res: Response) {
-    await this.platformService.changePassword(req.body);
-    return res.status(204).send();
-  }
+  public changePassword = async (req: Request, res: Response) => {
+    try {
+      const parsed = ChangePasswordDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return invalidBody(res, parsed.error);
+      }
 
-  async changeUsername(req: Request, res: Response) {
-    await this.platformService.changeUsername(req.body);
-    return res.status(204).send();
-  }
+      await this.platformService.changePassword(parsed.data);
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-  async list(req: Request, res: Response) {
-    await this.listUsers.execute(req.body);
-    return res.status(200).send();
-  }
-  async verify(req: Request, res: Response) {
-    await this.platformService.verify(req.body);
-    return res.status(204).send();
-  }
+  public changeUsername = async (req: Request, res: Response) => {
+    try {
+      const parsed = ChangeUsernameDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return invalidBody(res, parsed.error);
+      }
 
-  async softDelete(req: Request, res: Response) {
-    await this.lifecycleService.softDelete(req.body);
-    return res.status(204).send();
-  }
+      await this.platformService.changeUsername(parsed.data);
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-  async restore(req: Request, res: Response) {
-    await this.lifecycleService.restore(req.body);
-    return res.status(204).send();
-  }
+  public list = async (req: Request, res: Response) => {
+    try {
+      await this.listUsers.execute(req.body);
+      return res.status(200).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+  public verify = async (req: Request, res: Response) => {
+    try {
+      const parsed = VerifyDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return invalidBody(res, parsed.error);
+      }
 
-  async findUserById(req: Request, res: Response) {
-    await this.findUser.byId(req.body);
-    return res.status(200).send();
-  }
+      await this.platformService.verify(parsed.data);
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-  async findUserByEmail(req: Request, res: Response) {
-    await this.findUser.byEmail(req.body);
-    return res.status(200).send();
-  }
+  public softDelete = async (req: Request, res: Response) => {
+    try {
+      await this.lifecycleService.softDelete(req.body);
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 
-  async findUserByUsername(req: Request, res: Response) {
-    await this.findUser.byUsername(req.body);
-    return res.status(200).send();
-  }
+  public restore = async (req: Request, res: Response) => {
+    try {
+      await this.lifecycleService.restore(req.body);
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public findUserById = async (req: Request, res: Response) => {
+    try {
+      await this.findUser.byId(req.body);
+      return res.status(200).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public findUserByEmail = async (req: Request, res: Response) => {
+    try {
+      await this.findUser.byEmail(req.body);
+      return res.status(200).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public findUserByUsername = async (req: Request, res: Response) => {
+    try {
+      await this.findUser.byUsername(req.body);
+      return res.status(200).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
 }

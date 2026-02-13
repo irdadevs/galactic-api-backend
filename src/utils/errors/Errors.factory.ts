@@ -52,6 +52,7 @@ export function createErrorFactory<M extends ErrorMap>(
         cause,
         def.httpCode,
         def.public,
+        undefined,
         "Domain Layer",
       );
     },
@@ -64,6 +65,7 @@ export function createErrorFactory<M extends ErrorMap>(
         cause,
         def.httpCode,
         def.public,
+        undefined,
         "Application Layer",
       );
     },
@@ -76,6 +78,7 @@ export function createErrorFactory<M extends ErrorMap>(
         cause,
         def.httpCode,
         def.public,
+        undefined,
         "Infrastructure Layer",
       );
     },
@@ -92,6 +95,7 @@ export function createErrorFactory<M extends ErrorMap>(
         cause,
         def.httpCode,
         def.public,
+        undefined,
         "Presentation Layer",
       );
     },

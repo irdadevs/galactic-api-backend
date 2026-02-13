@@ -7,6 +7,7 @@ export class BaseError extends Error {
     public readonly meta?: ErrorMeta, // structured context (email, limits, etc.)
     public readonly cause?: unknown, // underlying error
     public readonly httpCode?: number, // 404, 422, 500...
+    public readonly isPublic?: boolean, // whether to expose message to the client
     public readonly retryable?: boolean, // just for retries attemps at controller layers
     public readonly layer?: string // just for retries attemps at controller layers
   ) {

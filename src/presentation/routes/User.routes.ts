@@ -18,7 +18,7 @@ export function UserRoutes(
     {
       method: "post",
       path: "login",
-      handler: ctrl.health, // swith to ctr.login
+      handler: ctrl.login,
     },
   ];
 }
