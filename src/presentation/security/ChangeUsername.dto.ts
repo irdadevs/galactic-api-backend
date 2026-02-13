@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { REGEXP } from "../../utils/Regexp";
 
 export const ChangeUsernameDTO = z.object({
   newUsername: z.string().min(3).max(30),
