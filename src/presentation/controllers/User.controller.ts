@@ -253,6 +253,15 @@ export class UserController {
     }
   };
 
+  public me = async (req: Request, res: Response) => {
+    try {
+      const user = await this.findUser.byId(Uuid.create(req.auth.userId));
+      return res.status(200).json(user);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
   public findUserByEmail = async (req: Request, res: Response) => {
     try {
       const parsed = FindUserByEmailDTO.safeParse(req.params);
