@@ -2,12 +2,11 @@ import {
   DomainError,
   ApplicationError,
   InfrastructureError,
-  PlatformError,
   PresentationError,
 } from "./Errors.base";
 
 /* ---------- Shapes ---------- */
-export type ErrorDef = { code: string; httpCode: number; retryable: boolean };
+export type ErrorDef = { code: string; httpCode: number; public: boolean };
 export type ErrorMap = Record<string, ErrorDef>;
 
 /** Extract union of codes from any ErrorMap (robust way). */
@@ -52,7 +51,7 @@ export function createErrorFactory<M extends ErrorMap>(
         meta,
         cause,
         def.httpCode,
-        def.retryable,
+        def.public,
         "Domain Layer",
       );
     },
@@ -64,7 +63,7 @@ export function createErrorFactory<M extends ErrorMap>(
         meta,
         cause,
         def.httpCode,
-        def.retryable,
+        def.public,
         "Application Layer",
       );
     },
@@ -76,7 +75,7 @@ export function createErrorFactory<M extends ErrorMap>(
         meta,
         cause,
         def.httpCode,
-        def.retryable,
+        def.public,
         "Infrastructure Layer",
       );
     },
@@ -92,7 +91,7 @@ export function createErrorFactory<M extends ErrorMap>(
         meta,
         cause,
         def.httpCode,
-        def.retryable,
+        def.public,
         "Presentation Layer",
       );
     },
