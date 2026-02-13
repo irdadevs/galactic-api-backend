@@ -1,8 +1,7 @@
 import { z } from "zod";
 
 export const ChangePasswordDTO = z.object({
-  userId: z.string().uuid(),
-  currentPassword: z.string(),
+  currentPassword: z.string().min(6),
   newPassword: z.string().min(6),
 });
 

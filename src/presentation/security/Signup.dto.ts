@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const SignupDTO = z.object({
-  email: z.string().email(),
-  username: z.string().min(3).max(30),
+  email: z.email(),
+  username: z.string().min(5).max(30),
   rawPassword: z.string().min(6),
 });
 

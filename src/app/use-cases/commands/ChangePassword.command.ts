@@ -12,12 +12,12 @@ export class ChangePassword {
     private readonly sessionRepo: ISession,
   ) {}
 
-  async execute(dto: ChangePasswordDTO) {
-    const user = await this.userRepo.findById(Uuid.create(dto.userId));
+  async execute(userId: Uuid, dto: ChangePasswordDTO) {
+    const user = await this.userRepo.findById(userId);
 
     if (!user) {
       throw ErrorFactory.presentation("SHARED.NOT_FOUND", {
-        id: dto.userId,
+        id: userId,
       });
     }
 
@@ -27,7 +27,7 @@ export class ChangePassword {
 
     await this.userRepo.save(user);
 
-    await this.sessionRepo.revokeAllForUser(dto.userId);
+    await this.sessionRepo.revokeAllForUser(userId.toString());
 
     return true;
   }

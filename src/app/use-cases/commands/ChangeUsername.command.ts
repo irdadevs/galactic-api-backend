@@ -6,12 +6,12 @@ import { IUser } from "../../interfaces/User.port";
 export class ChangeUsername {
   constructor(private readonly userRepo: IUser) {}
 
-  async execute(dto: ChangeUsernameDTO) {
-    const user = await this.userRepo.findById(Uuid.create(dto.userId));
+  async execute(userId: Uuid, dto: ChangeUsernameDTO) {
+    const user = await this.userRepo.findById(userId);
 
     if (!user) {
       throw ErrorFactory.presentation("SHARED.NOT_FOUND", {
-        id: dto.userId,
+        id: userId,
       });
     }
 

@@ -1,3 +1,4 @@
+import { Uuid } from "../../../domain/aggregates/User";
 import { ChangeEmailDTO } from "../../../presentation/security/ChangeEmail.dto";
 import { ChangePasswordDTO } from "../../../presentation/security/ChangePassword.dto";
 import { ChangeUsernameDTO } from "../../../presentation/security/ChangeUsername.dto";
@@ -26,15 +27,15 @@ export class PlatformService {
     return this.verifyUser.execute(dto);
   }
 
-  changeEmail(dto: ChangeEmailDTO) {
-    return this.changeEmailUser.execute(dto);
+  changeEmail(userId: Uuid, dto: ChangeEmailDTO) {
+    return this.changeEmailUser.execute(userId, dto);
   }
 
-  changePassword(dto: ChangePasswordDTO) {
-    return this.changePasswordUser.execute(dto);
+  changePassword(userId: Uuid, dto: ChangePasswordDTO) {
+    return this.changePasswordUser.execute(userId, dto);
   }
 
-  changeUsername(dto: ChangeUsernameDTO) {
-    return this.changeUsernameUser.execute(dto);
+  changeUsername(userId: Uuid, dto: ChangeUsernameDTO) {
+    return this.changeUsernameUser.execute(userId, dto);
   }
 }
