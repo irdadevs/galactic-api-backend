@@ -25,6 +25,7 @@ import { VerifyUser } from "./app/use-cases/commands/VerifyUser.command";
 import { ChangeEmail } from "./app/use-cases/commands/ChangeEmail.command";
 import { ChangePassword } from "./app/use-cases/commands/ChangePassword.command";
 import { ChangeUsername } from "./app/use-cases/commands/ChangeUsername.command";
+import { ResendVerificationCode } from "./app/use-cases/commands/ResendVerificationCode.command";
 import { ListUsers } from "./app/use-cases/queries/users/ListUsers.query";
 import { SoftDeleteUser } from "./app/use-cases/commands/SoftDeleteUser.command";
 import { RestoreUser } from "./app/use-cases/commands/RestoreUser.command";
@@ -114,6 +115,11 @@ async function start(): Promise<void> {
     const loginUser = new LoginUser(userRepo, hasher);
     const signupUser = new SignupUser(userRepo, hasher, mailer);
     const verifyUser = new VerifyUser(userRepo, hasher);
+    const resendVerificationCode = new ResendVerificationCode(
+      userRepo,
+      hasher,
+      mailer,
+    );
     const changeEmailUser = new ChangeEmail(userRepo);
     const changePasswordUser = new ChangePassword(
       userRepo,
@@ -141,6 +147,7 @@ async function start(): Promise<void> {
     const platformService = new PlatformService(
       signupUser,
       verifyUser,
+      resendVerificationCode,
       changeEmailUser,
       changePasswordUser,
       changeUsernameUser,

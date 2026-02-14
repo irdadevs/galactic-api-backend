@@ -68,9 +68,13 @@ export function UserRoutes(
     },
     {
       method: "post",
-      path: "/me/verify",
-      before: [auth.requireAuth()],
+      path: "/verify",
       handler: ctrl.verify,
+    },
+    {
+      method: "post",
+      path: "/verify/resend",
+      handler: ctrl.resendVerification,
     },
     {
       method: "delete",

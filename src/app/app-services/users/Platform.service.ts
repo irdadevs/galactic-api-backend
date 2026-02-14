@@ -4,9 +4,11 @@ import { ChangePasswordDTO } from "../../../presentation/security/ChangePassword
 import { ChangeUsernameDTO } from "../../../presentation/security/ChangeUsername.dto";
 import { SignupDTO } from "../../../presentation/security/Signup.dto";
 import { VerifyDTO } from "../../../presentation/security/Verify.dto";
+import { ResendVerificationDTO } from "../../../presentation/security/ResendVerification.dto";
 import { ChangeEmail } from "../../use-cases/commands/ChangeEmail.command";
 import { ChangePassword } from "../../use-cases/commands/ChangePassword.command";
 import { ChangeUsername } from "../../use-cases/commands/ChangeUsername.command";
+import { ResendVerificationCode } from "../../use-cases/commands/ResendVerificationCode.command";
 import { SignupUser } from "../../use-cases/commands/SignupUser.command";
 import { VerifyUser } from "../../use-cases/commands/VerifyUser.command";
 
@@ -14,6 +16,7 @@ export class PlatformService {
   constructor(
     private readonly signupUser: SignupUser,
     private readonly verifyUser: VerifyUser,
+    private readonly resendVerificationCode: ResendVerificationCode,
     private readonly changeEmailUser: ChangeEmail,
     private readonly changePasswordUser: ChangePassword,
     private readonly changeUsernameUser: ChangeUsername,
@@ -25,6 +28,10 @@ export class PlatformService {
 
   verify(dto: VerifyDTO) {
     return this.verifyUser.execute(dto);
+  }
+
+  resendVerification(dto: ResendVerificationDTO) {
+    return this.resendVerificationCode.execute(dto);
   }
 
   changeEmail(userId: Uuid, dto: ChangeEmailDTO) {

@@ -12,6 +12,7 @@ import { FindUserByUsernameDTO } from "../security/FindUserByUsername.dto";
 import { LoginDTO } from "../security/Login.dto";
 import { LogoutDTO } from "../security/Logout.dto";
 import { RefreshDTO } from "../security/Refresh.dto";
+import { ResendVerificationDTO } from "../security/ResendVerification.dto";
 import { RestoreDTO } from "../security/Restore.dto";
 import { SignupDTO } from "../security/Signup.dto";
 import { SoftDeleteDTO } from "../security/SoftDelete.dto";
@@ -204,6 +205,20 @@ export class UserController {
       }
 
       await this.platformService.verify(parsed.data);
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public resendVerification = async (req: Request, res: Response) => {
+    try {
+      const parsed = ResendVerificationDTO.safeParse(req.body);
+      if (!parsed.success) {
+        return invalidBody(res, parsed.error);
+      }
+
+      await this.platformService.resendVerification(parsed.data);
       return res.status(204).send();
     } catch (err: unknown) {
       return errorHandler(err, res);
