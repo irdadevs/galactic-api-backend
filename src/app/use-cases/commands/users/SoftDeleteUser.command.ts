@@ -1,6 +1,6 @@
-import { IUser } from "../../interfaces/User.port";
-import { Uuid } from "../../../domain/aggregates/User";
-import { ErrorFactory } from "../../../utils/errors/Error.map";
+import { IUser } from "../../../interfaces/User.port";
+import { Uuid } from "../../../../domain/aggregates/User";
+import { ErrorFactory } from "../../../../utils/errors/Error.map";
 
 export class SoftDeleteUser {
   constructor(private readonly userRepo: IUser) {}

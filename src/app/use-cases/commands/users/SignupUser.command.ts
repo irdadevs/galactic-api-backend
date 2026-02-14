@@ -1,9 +1,9 @@
-import { IUser } from "../../interfaces/User.port";
-import { IHasher } from "../../interfaces/Hasher.port";
-import { SignupDTO } from "../../../presentation/security/Signup.dto";
-import { Email, User, Username } from "../../../domain/aggregates/User";
-import { ErrorFactory } from "../../../utils/errors/Error.map";
-import { IMailer } from "../../interfaces/Mailer.port";
+import { IUser } from "../../../interfaces/User.port";
+import { IHasher } from "../../../interfaces/Hasher.port";
+import { SignupDTO } from "../../../../presentation/security/users/Signup.dto";
+import { Email, User, Username } from "../../../../domain/aggregates/User";
+import { ErrorFactory } from "../../../../utils/errors/Error.map";
+import { IMailer } from "../../../interfaces/Mailer.port";
 
 export class SignupUser {
   constructor(

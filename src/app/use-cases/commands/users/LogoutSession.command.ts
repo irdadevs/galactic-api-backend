@@ -1,4 +1,4 @@
-import { ISession } from "../../interfaces/Session.port";
+import { ISession } from "../../../interfaces/Session.port";
 
 export class LogoutSession {
   constructor(private readonly sessionRepo: ISession) {}

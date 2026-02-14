@@ -1,9 +1,9 @@
-import { IUser } from "../../interfaces/User.port";
-import { IHasher } from "../../interfaces/Hasher.port";
-import { ErrorFactory } from "../../../utils/errors/Error.map";
-import { ISession } from "../../interfaces/Session.port";
-import { ChangePasswordDTO } from "../../../presentation/security/ChangePassword.dto";
-import { Uuid } from "../../../domain/aggregates/User";
+import { IUser } from "../../../interfaces/User.port";
+import { IHasher } from "../../../interfaces/Hasher.port";
+import { ErrorFactory } from "../../../../utils/errors/Error.map";
+import { ISession } from "../../../interfaces/Session.port";
+import { ChangePasswordDTO } from "../../../../presentation/security/users/ChangePassword.dto";
+import { Uuid } from "../../../../domain/aggregates/User";
 
 export class ChangePassword {
   constructor(

@@ -1,8 +1,8 @@
-import { Email } from "../../../domain/aggregates/User";
-import { ResendVerificationDTO } from "../../../presentation/security/ResendVerification.dto";
-import { IHasher } from "../../interfaces/Hasher.port";
-import { IMailer } from "../../interfaces/Mailer.port";
-import { IUser } from "../../interfaces/User.port";
+import { Email } from "../../../../domain/aggregates/User";
+import { ResendVerificationDTO } from "../../../../presentation/security/users/ResendVerification.dto";
+import { IHasher } from "../../../interfaces/Hasher.port";
+import { IMailer } from "../../../interfaces/Mailer.port";
+import { IUser } from "../../../interfaces/User.port";
 
 export class ResendVerificationCode {
   constructor(

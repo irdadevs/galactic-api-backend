@@ -1,16 +1,16 @@
 import { Uuid } from "../../../domain/aggregates/User";
-import { ChangeEmailDTO } from "../../../presentation/security/ChangeEmail.dto";
-import { ChangePasswordDTO } from "../../../presentation/security/ChangePassword.dto";
-import { ChangeUsernameDTO } from "../../../presentation/security/ChangeUsername.dto";
-import { SignupDTO } from "../../../presentation/security/Signup.dto";
-import { VerifyDTO } from "../../../presentation/security/Verify.dto";
-import { ResendVerificationDTO } from "../../../presentation/security/ResendVerification.dto";
-import { ChangeEmail } from "../../use-cases/commands/ChangeEmail.command";
-import { ChangePassword } from "../../use-cases/commands/ChangePassword.command";
-import { ChangeUsername } from "../../use-cases/commands/ChangeUsername.command";
-import { ResendVerificationCode } from "../../use-cases/commands/ResendVerificationCode.command";
-import { SignupUser } from "../../use-cases/commands/SignupUser.command";
-import { VerifyUser } from "../../use-cases/commands/VerifyUser.command";
+import { ChangeEmailDTO } from "../../../presentation/security/users/ChangeEmail.dto";
+import { ChangePasswordDTO } from "../../../presentation/security/users/ChangePassword.dto";
+import { ChangeUsernameDTO } from "../../../presentation/security/users/ChangeUsername.dto";
+import { SignupDTO } from "../../../presentation/security/users/Signup.dto";
+import { VerifyDTO } from "../../../presentation/security/users/Verify.dto";
+import { ResendVerificationDTO } from "../../../presentation/security/users/ResendVerification.dto";
+import { ChangeEmail } from "../../use-cases/commands/users/ChangeEmail.command";
+import { ChangePassword } from "../../use-cases/commands/users/ChangePassword.command";
+import { ChangeUsername } from "../../use-cases/commands/users/ChangeUsername.command";
+import { ResendVerificationCode } from "../../use-cases/commands/users/ResendVerificationCode.command";
+import { SignupUser } from "../../use-cases/commands/users/SignupUser.command";
+import { VerifyUser } from "../../use-cases/commands/users/VerifyUser.command";
 
 export class PlatformService {
   constructor(

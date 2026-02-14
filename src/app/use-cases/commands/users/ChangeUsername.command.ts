@@ -1,7 +1,7 @@
-import { Username, Uuid } from "../../../domain/aggregates/User";
-import { ChangeUsernameDTO } from "../../../presentation/security/ChangeUsername.dto";
-import { ErrorFactory } from "../../../utils/errors/Error.map";
-import { IUser } from "../../interfaces/User.port";
+import { Username, Uuid } from "../../../../domain/aggregates/User";
+import { ChangeUsernameDTO } from "../../../../presentation/security/users/ChangeUsername.dto";
+import { ErrorFactory } from "../../../../utils/errors/Error.map";
+import { IUser } from "../../../interfaces/User.port";
 
 export class ChangeUsername {
   constructor(private readonly userRepo: IUser) {}

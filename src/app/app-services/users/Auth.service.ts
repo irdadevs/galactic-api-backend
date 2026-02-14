@@ -1,12 +1,12 @@
 import { randomUUID } from "crypto";
-import { LoginUser } from "../../use-cases/commands/LoginUser.command";
+import { LoginUser } from "../../use-cases/commands/users/LoginUser.command";
 import { IJWT } from "../../interfaces/Jwt.port";
 import { IHasher } from "../../interfaces/Hasher.port";
 import { ISession } from "../../interfaces/Session.port";
-import { LoginDTO } from "../../../presentation/security/Login.dto";
-import { RefreshSession } from "../../use-cases/commands/RefreshSession.command";
-import { LogoutSession } from "../../use-cases/commands/LogoutSession.command";
-import { LogoutAllSessions } from "../../use-cases/commands/LogoutAllSessions.command";
+import { LoginDTO } from "../../../presentation/security/users/Login.dto";
+import { RefreshSession } from "../../use-cases/commands/users/RefreshSession.command";
+import { LogoutSession } from "../../use-cases/commands/users/LogoutSession.command";
+import { LogoutAllSessions } from "../../use-cases/commands/users/LogoutAllSessions.command";
 
 export class AuthService {
   constructor(

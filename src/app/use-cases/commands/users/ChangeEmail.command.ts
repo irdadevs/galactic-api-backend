@@ -1,7 +1,7 @@
-import { Email, Uuid } from "../../../domain/aggregates/User";
-import { ChangeEmailDTO } from "../../../presentation/security/ChangeEmail.dto";
-import { ErrorFactory } from "../../../utils/errors/Error.map";
-import { IUser } from "../../interfaces/User.port";
+import { Email, Uuid } from "../../../../domain/aggregates/User";
+import { ChangeEmailDTO } from "../../../../presentation/security/users/ChangeEmail.dto";
+import { ErrorFactory } from "../../../../utils/errors/Error.map";
+import { IUser } from "../../../interfaces/User.port";
 
 export class ChangeEmail {
   constructor(private readonly userRepo: IUser) {}
