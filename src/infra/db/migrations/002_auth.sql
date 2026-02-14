@@ -16,6 +16,8 @@ CREATE TABLE
         email email_addr NOT NULL UNIQUE,
         hashed_password non_empty_text NOT NULL,
         is_verified boolean NOT NULL DEFAULT false,
+        verification_code text NULL,
+        verified_at timestamptz NULL,
         created_at timestamptz NOT NULL DEFAULT now_utc (),
         updated_at timestamptz NOT NULL DEFAULT now_utc ()
     );
