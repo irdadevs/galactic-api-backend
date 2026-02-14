@@ -118,7 +118,14 @@ export class UserController {
 
       const user = await this.platformService.signup(parsed.data);
 
-      return res.status(201).json(user);
+      return res.status(201).json({
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          verified: user.isVerified,
+        },
+      });
     } catch (err: unknown) {
       return errorHandler(err, res);
     }

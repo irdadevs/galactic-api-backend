@@ -21,6 +21,8 @@ export default class UserRepo implements IUser {
       passwordHash: row.hashed_password,
       username: row.username,
       isVerified: row.is_verified,
+      verificationCode: row.verification_code ?? null,
+      verifiedAt: row.verified_at ?? null,
       isDeleted: row.is_deleted,
       deletedAt: row.deleted_at ?? null,
       createdAt: row.created_at,
@@ -39,6 +41,8 @@ export default class UserRepo implements IUser {
         u.hashed_password,
         u.username,
         u.is_verified,
+        u.verification_code,
+        u.verified_at,
         u.is_deleted,
         u.deleted_at,
         u.created_at,
@@ -130,12 +134,14 @@ export default class UserRepo implements IUser {
         hashed_password,
         username,
         is_verified,
+        verification_code,
+        verified_at,
         is_deleted,
         deleted_at,
         created_at,
         updated_at
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8, now_utc())
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now_utc())
       `,
         [
           id,
@@ -143,6 +149,8 @@ export default class UserRepo implements IUser {
           user.passwordHash.toString(),
           user.username.toString(),
           user.isVerified,
+          user.verificationCode,
+          user.verifiedAt,
           user.isDeleted ?? false,
           user.deletedAt ?? null,
           user.createdAt,
@@ -161,8 +169,10 @@ export default class UserRepo implements IUser {
         hashed_password = $3,
         username = $4,
         is_verified = $5,
-        is_deleted = $6,
-        deleted_at = $7,
+        verification_code = $6,
+        verified_at = $7,
+        is_deleted = $8,
+        deleted_at = $9,
         updated_at = now_utc()
       WHERE id = $1
       `,
@@ -172,6 +182,8 @@ export default class UserRepo implements IUser {
           user.passwordHash.toString(),
           user.username.toString(),
           user.isVerified,
+          user.verificationCode,
+          user.verifiedAt,
           user.isDeleted ?? false,
           user.deletedAt ?? null,
         ],
@@ -322,6 +334,8 @@ export default class UserRepo implements IUser {
           u.hashed_password,
           u.username,
           u.is_verified,
+          u.verification_code,
+          u.verified_at,
           u.is_deleted,
           u.deleted_at,
           u.created_at,
@@ -335,7 +349,10 @@ export default class UserRepo implements IUser {
   async verify(email: Email): Promise<void> {
     const res = await this.db.query(
       `UPDATE auth.users
-       SET is_verified = true, updated_at = now_utc()
+       SET is_verified = true,
+           verification_code = NULL,
+           verified_at = now_utc(),
+           updated_at = now_utc()
        WHERE email = $1`,
       [email.toString()],
     );
@@ -354,7 +371,7 @@ export default class UserRepo implements IUser {
        SET is_deleted = true,
            deleted_at = COALESCE($2, now_utc()),
            updated_at = now_utc()
-       WHERE email = $1`,
+       WHERE id = $1`,
       [id.toString(), at ?? null],
     );
 
@@ -372,7 +389,7 @@ export default class UserRepo implements IUser {
        SET is_deleted = false,
            deleted_at = NULL,
            updated_at = now_utc()
-       WHERE email = $1`,
+       WHERE id = $1`,
       [id.toString()],
     );
 

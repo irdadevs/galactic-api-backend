@@ -37,7 +37,7 @@ import { LifecycleService } from "./app/app-services/users/Lifecycle.service";
 import { UserController } from "./presentation/controllers/User.controller";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
-import { genRandomCode } from "./utils/genRandomCode";
+import { MailerRepo } from "./infra/repos/Mailer.repository";
 
 // --------------------
 // Server config
@@ -106,13 +106,14 @@ async function start(): Promise<void> {
     const userRepo = new UserRepo(postgres);
     const sessionRepo = new SessionRepo(postgres._getPool());
     const hasher = new HasherRepo();
+    const mailer = new MailerRepo();
     const jwtService = new JwtService();
     //! App layer
     // Use-cases
     const healthCheck = new HealthQuery();
     const loginUser = new LoginUser(userRepo, hasher);
-    const signupUser = new SignupUser(userRepo, hasher);
-    const verifyUser = new VerifyUser(userRepo);
+    const signupUser = new SignupUser(userRepo, hasher, mailer);
+    const verifyUser = new VerifyUser(userRepo, hasher);
     const changeEmailUser = new ChangeEmail(userRepo);
     const changePasswordUser = new ChangePassword(
       userRepo,

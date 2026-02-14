@@ -86,6 +86,16 @@ export const ErrorMap = {
     httpCode: 400,
     public: true,
   },
+  EMAIL_NOT_VERIFIED: {
+    code: "USERS.EMAIL_NOT_VERIFIED",
+    httpCode: 403,
+    public: true,
+  },
+  INVALID_VERIFICATION_CODE: {
+    code: "USERS.INVALID_VERIFICATION_CODE",
+    httpCode: 400,
+    public: true,
+  },
   EMAIL_EXIST_SIGNUP: {
     code: "USERS.EMAIL_EXIST_SIGNUP",
     httpCode: 400,
@@ -279,6 +289,10 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorMap.INVALID_CREDENTIALS.code]: "Invalid login credentials.",
   [ErrorMap.INVALID_REFRESH.code]: "Invalid session refresh.",
   [ErrorMap.SESSION_INVALID.code]: "Invalid session.",
+  [ErrorMap.EMAIL_NOT_VERIFIED.code]:
+    "Email is not verified. Complete verification first.",
+  [ErrorMap.INVALID_VERIFICATION_CODE.code]:
+    "Invalid verification code.",
   [ErrorMap.SESSION_EXPIRED.code]: "Expired session.",
   [ErrorMap.REFRESH_REUSED.code]: "Session refresh token reused.",
   [ErrorMap.EMAIL_EXIST_SIGNUP.code]:

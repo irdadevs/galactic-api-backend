@@ -36,7 +36,7 @@ export class AuthMiddleware {
           tenantId: claims.tenantId,
         };
 
-        next();
+        return next();
       } catch {
         return res.status(401).json({ ok: false, error: "INVALID_TOKEN" });
       }

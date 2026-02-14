@@ -32,7 +32,7 @@ export class ScopeMiddleware {
         tenantId: req.auth.tenantId,
       };
 
-      next();
+      return next();
     };
   }
 }

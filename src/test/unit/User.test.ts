@@ -29,6 +29,8 @@ describe("User aggregate", () => {
     expect(user.passwordHash).toBe(validInput.passwordHash);
     expect(user.username).toBe(validInput.username);
     expect(user.isVerified).toBe(false);
+    expect(user.verificationCode).toBeNull();
+    expect(user.verifiedAt).toBeNull();
     expect(user.isDeleted).toBe(false);
     expect(user.deletedAt).toBeNull();
     expect(user.role).toBe("User");
@@ -41,6 +43,8 @@ describe("User aggregate", () => {
       id: "11111111-1111-4111-8111-111111111111",
       role: "Admin",
       isVerified: true,
+      verificationCode: "verification-hash-123456",
+      verifiedAt: new Date("2025-01-01T12:00:00.000Z"),
       isDeleted: true,
       deletedAt: new Date("2025-01-02T00:00:00.000Z"),
       createdAt: new Date("2025-01-01T00:00:00.000Z"),
@@ -49,6 +53,8 @@ describe("User aggregate", () => {
     expect(user.id).toBe("11111111-1111-4111-8111-111111111111");
     expect(user.role).toBe("Admin");
     expect(user.isVerified).toBe(true);
+    expect(user.verificationCode).toBe("verification-hash-123456");
+    expect(user.verifiedAt?.toISOString()).toBe("2025-01-01T12:00:00.000Z");
     expect(user.isDeleted).toBe(true);
     expect(user.deletedAt?.toISOString()).toBe("2025-01-02T00:00:00.000Z");
     expect(user.createdAt.toISOString()).toBe("2025-01-01T00:00:00.000Z");
@@ -116,6 +122,18 @@ describe("User aggregate", () => {
     user.verifyEmail();
 
     expect(user.isVerified).toBe(true);
+    expect(user.verifiedAt).toBeInstanceOf(Date);
+    expect(user.verificationCode).toBeNull();
+  });
+
+  it("sets verification code and marks user as pending verification", () => {
+    const user = User.create(validInput);
+
+    user.setVerificationCode("hashed-verification-code-123456");
+
+    expect(user.verificationCode).toBe("hashed-verification-code-123456");
+    expect(user.isVerified).toBe(false);
+    expect(user.verifiedAt).toBeNull();
   });
 
   it("changes email when different", () => {
@@ -187,6 +205,8 @@ describe("User aggregate", () => {
       passwordHash: "rehydrated-hash-123",
       username: "rehydrated_user",
       isVerified: true,
+      verificationCode: null,
+      verifiedAt: new Date("2024-06-01T12:00:00.000Z"),
       isDeleted: true,
       deletedAt: new Date("2024-06-02T10:00:00.000Z"),
       createdAt: new Date("2024-06-01T10:00:00.000Z"),
@@ -198,6 +218,8 @@ describe("User aggregate", () => {
     expect(user.passwordHash).toBe("rehydrated-hash-123");
     expect(user.username).toBe("rehydrated_user");
     expect(user.isVerified).toBe(true);
+    expect(user.verifiedAt?.toISOString()).toBe("2024-06-01T12:00:00.000Z");
+    expect(user.verificationCode).toBeNull();
     expect(user.isDeleted).toBe(true);
     expect(user.deletedAt?.toISOString()).toBe("2024-06-02T10:00:00.000Z");
     expect(user.role).toBe("User");
@@ -214,6 +236,8 @@ describe("User aggregate", () => {
       username: user.username,
       password: user.passwordHash,
       is_verified: user.isVerified,
+      verification_code: user.verificationCode,
+      verified_at: user.verifiedAt,
       is_deleted: user.isDeleted,
       deleted_at: user.deletedAt,
       created_at: user.createdAt,

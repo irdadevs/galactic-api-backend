@@ -24,6 +24,10 @@ export class LoginUser {
       throw ErrorFactory.presentation("AUTH.INVALID_CREDENTIALS");
     }
 
+    if (!exist.isVerified) {
+      throw ErrorFactory.presentation("USERS.EMAIL_NOT_VERIFIED");
+    }
+
     return exist;
   }
 }

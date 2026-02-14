@@ -10,6 +10,8 @@ export type UserProps = {
   passwordHash: PasswordHash;
   username: Username;
   isVerified: boolean;
+  verificationCode: string | null;
+  verifiedAt: Date | null;
   isDeleted: boolean;
   role: Role;
   deletedAt: Date | null;
@@ -22,6 +24,8 @@ export type UserCreateProps = {
   username: string;
   id?: string;
   isVerified?: boolean;
+  verificationCode?: string | null;
+  verifiedAt?: Date | null;
   isDeleted?: boolean;
   deletedAt?: Date | null;
   role?: UserRole;
@@ -34,6 +38,8 @@ export type UserDTO = {
   username: string;
   password: string;
   is_verified: boolean;
+  verification_code: string | null;
+  verified_at: Date | null;
   is_deleted: boolean;
   deleted_at: Date | null;
   created_at: Date;
@@ -164,6 +170,8 @@ export class User {
       passwordHash: PasswordHash.create(input.passwordHash),
       username: Username.create(input.username),
       isVerified: input.isVerified ?? false,
+      verificationCode: input.verificationCode ?? null,
+      verifiedAt: input.verifiedAt ?? null,
       isDeleted: input.isDeleted ?? false,
       createdAt: input.createdAt ?? now,
       deletedAt: input.deletedAt ?? null,
@@ -179,6 +187,8 @@ export class User {
     passwordHash: string;
     username: string;
     isVerified: boolean;
+    verificationCode: string | null;
+    verifiedAt: Date | null;
     isDeleted: boolean;
     deletedAt: Date | null;
     createdAt: Date;
@@ -190,6 +200,8 @@ export class User {
       passwordHash: PasswordHash.create(props.passwordHash),
       username: Username.create(props.username),
       isVerified: props.isVerified,
+      verificationCode: props.verificationCode,
+      verifiedAt: props.verifiedAt,
       isDeleted: props.isDeleted,
       createdAt: props.createdAt,
       deletedAt: props.deletedAt,
@@ -217,6 +229,14 @@ export class User {
     return this.props.isVerified;
   }
 
+  get verificationCode(): string | null {
+    return this.props.verificationCode;
+  }
+
+  get verifiedAt(): Date | null {
+    return this.props.verifiedAt;
+  }
+
   get isDeleted(): boolean {
     return this.props.isDeleted;
   }
@@ -239,6 +259,14 @@ export class User {
     }
 
     this.props.isVerified = true;
+    this.props.verifiedAt = new Date();
+    this.props.verificationCode = null;
+  }
+
+  setVerificationCode(code: string): void {
+    this.props.verificationCode = code.trim();
+    this.props.verifiedAt = null;
+    this.props.isVerified = false;
   }
 
   changeEmail(value: string): void {
@@ -287,6 +315,8 @@ export class User {
     username: string;
     passwordHash: string;
     isVerified: boolean;
+    verificationCode: string | null;
+    verifiedAt: Date | null;
     isDeleted: boolean;
     deletedAt: Date | null;
     createdAt: Date;
@@ -298,6 +328,8 @@ export class User {
       username: this.username,
       passwordHash: this.passwordHash,
       isVerified: this.isVerified,
+      verificationCode: this.verificationCode,
+      verifiedAt: this.verifiedAt,
       isDeleted: this.isDeleted,
       deletedAt: this.deletedAt,
       createdAt: this.createdAt,
@@ -312,6 +344,8 @@ export class User {
       username: this.username,
       password: this.passwordHash,
       is_verified: this.isVerified,
+      verification_code: this.verificationCode,
+      verified_at: this.verifiedAt,
       is_deleted: this.isDeleted,
       deleted_at: this.deletedAt,
       created_at: this.createdAt,

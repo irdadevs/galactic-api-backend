@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 import { PgPoolQueryable } from "../Postgres";
 import { PgUnitOfWorkFactory } from "../PostgresUoW";
 import { CONSOLE_COLORS } from "../../../utils/Chalk";
-import { SharedErrorFactory } from "../../../utils/errors/Error.map";
+import { ErrorFactory } from "../../../utils/errors/Error.map";
 
 const ADMIN_EMAIL = "admin@galactic.dev";
 const ADMIN_PASSWORD = "Galactic-dev";
@@ -63,12 +63,13 @@ async function main() {
 
     const userResult = await uow.db.query<{ id: string }>(
       `
-      INSERT INTO auth.users (email, hashed_password, is_verified)
-      VALUES ($1, $2, true)
+      INSERT INTO auth.users (email, hashed_password, is_verified, verified_at)
+      VALUES ($1, $2, true, now_utc())
       ON CONFLICT (email)
       DO UPDATE SET
         hashed_password = EXCLUDED.hashed_password,
         is_verified = true,
+        verified_at = COALESCE(auth.users.verified_at, now_utc()),
         updated_at = now_utc()
       RETURNING id
       `,
@@ -77,7 +78,7 @@ async function main() {
 
     const userId = userResult.rows[0]?.id;
     if (!userId) {
-      throw SharedErrorFactory.infra("SHARED.DATABASE_CONNECTION", {
+      throw ErrorFactory.infra("INFRA.DATABASE_CONNECTION", {
         reason: "admin user upsert did not return id",
       });
     }
@@ -87,7 +88,7 @@ async function main() {
     );
     const roleId = roleResult.rows[0]?.id;
     if (!roleId) {
-      throw SharedErrorFactory.infra("SHARED.DATABASE_CONNECTION", {
+      throw ErrorFactory.infra("INFRA.DATABASE_CONNECTION", {
         reason: "admin role not found",
       });
     }
@@ -105,7 +106,7 @@ async function main() {
     logSuccess("seed completed");
   } catch (err) {
     await uow.rollback();
-    throw SharedErrorFactory.infra("SHARED.TRANSACTION_FAILED", {
+    throw ErrorFactory.infra("INFRA.TRANSACTION_FAILED", {
       cause: err instanceof Error ? err.message : String(err),
     });
   } finally {

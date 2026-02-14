@@ -6,7 +6,7 @@ dotenv.config();
 
 import { PgPoolQueryable } from "../Postgres";
 import { PgUnitOfWorkFactory } from "../PostgresUoW";
-import { SharedErrorFactory } from "../../../utils/errors/Error.map";
+import { ErrorFactory } from "../../../utils/errors/Error.map";
 import { CONSOLE_COLORS } from "../../../utils/Chalk";
 
 const MIGRATIONS_DIR = path.join(
@@ -90,7 +90,7 @@ async function main() {
     if (existing.rowCount > 0) {
       const prev = existing.rows[0].checksum;
       if (prev !== checksum) {
-        throw SharedErrorFactory.infra("SHARED.TRANSACTION_FAILED", {
+        throw ErrorFactory.infra("INFRA.TRANSACTION_FAILED", {
           cause: `Checksum mismatch for ${filename}. Refuse to reapply changed migration.`,
         });
       }
@@ -117,7 +117,7 @@ async function main() {
       logSuccess(`applied ${filename} (${Date.now() - startedAt}ms)`);
     } catch (err) {
       await uow.rollback();
-      throw SharedErrorFactory.infra("SHARED.TRANSACTION_FAILED", {
+      throw ErrorFactory.infra("INFRA.TRANSACTION_FAILED", {
         cause: err instanceof Error ? err.message : String(err),
       });
     }
