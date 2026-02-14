@@ -37,6 +37,7 @@ import { LifecycleService } from "./app/app-services/users/Lifecycle.service";
 import { UserController } from "./presentation/controllers/User.controller";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
+import { genRandomCode } from "./utils/genRandomCode";
 
 // --------------------
 // Server config
