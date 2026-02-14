@@ -49,7 +49,7 @@ export class SignupUser {
     await this.mailer.send(
       Email.create(dto.email),
       "Galactic API - Verification code",
-      `Your Galactic API verification code is: ${code}`,
+      code,
     );
 
     return user;
