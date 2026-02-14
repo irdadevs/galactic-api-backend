@@ -43,7 +43,7 @@ describe("User aggregate", () => {
       id: "11111111-1111-4111-8111-111111111111",
       role: "Admin",
       isVerified: true,
-      verificationCode: "verification-hash-123456",
+      verificationCode: "verification-hash-12345678",
       verifiedAt: new Date("2025-01-01T12:00:00.000Z"),
       isDeleted: true,
       deletedAt: new Date("2025-01-02T00:00:00.000Z"),
@@ -53,7 +53,7 @@ describe("User aggregate", () => {
     expect(user.id).toBe("11111111-1111-4111-8111-111111111111");
     expect(user.role).toBe("Admin");
     expect(user.isVerified).toBe(true);
-    expect(user.verificationCode).toBe("verification-hash-123456");
+    expect(user.verificationCode).toBe("verification-hash-12345678");
     expect(user.verifiedAt?.toISOString()).toBe("2025-01-01T12:00:00.000Z");
     expect(user.isDeleted).toBe(true);
     expect(user.deletedAt?.toISOString()).toBe("2025-01-02T00:00:00.000Z");
@@ -129,9 +129,9 @@ describe("User aggregate", () => {
   it("sets verification code and marks user as pending verification", () => {
     const user = User.create(validInput);
 
-    user.setVerificationCode("hashed-verification-code-123456");
+    user.setVerificationCode("hashed-verification-code-12345678");
 
-    expect(user.verificationCode).toBe("hashed-verification-code-123456");
+    expect(user.verificationCode).toBe("hashed-verification-code-12345678");
     expect(user.isVerified).toBe(false);
     expect(user.verifiedAt).toBeNull();
   });

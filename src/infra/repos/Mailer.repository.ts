@@ -42,12 +42,12 @@ export class MailerRepo implements IMailer {
     this.transporter = null;
   }
 
-  genCode(long: number = 6): string {
-    const digits =
-      "abcdefghijklmnoprstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  genCode(long: number = 8): string {
+    const chars =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let code = "";
     for (let i = 0; i < long; i++) {
-      code += digits[randomInt(0, digits.length)];
+      code += chars[randomInt(0, chars.length)];
     }
     return code;
   }
