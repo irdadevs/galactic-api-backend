@@ -112,7 +112,7 @@ export class MailerRepo implements IMailer {
                   <tr>${boxes}</tr>
                 </table>
                 <p style="margin:18px 0 0; text-align:center; font-family:Segoe UI, Arial, sans-serif; color:#52607a; font-size:13px;">
-                  This code expires soon. If you did not request this, you can ignore this email.
+                  This code expires in 30 minutes. If you did not request this, you can ignore this email.
                 </p>
               </td>
             </tr>

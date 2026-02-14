@@ -22,6 +22,7 @@ export default class UserRepo implements IUser {
       username: row.username,
       isVerified: row.is_verified,
       verificationCode: row.verification_code ?? null,
+      verificationCodeExpiresAt: row.verification_code_expires_at ?? null,
       verifiedAt: row.verified_at ?? null,
       isDeleted: row.is_deleted,
       deletedAt: row.deleted_at ?? null,
@@ -42,6 +43,7 @@ export default class UserRepo implements IUser {
         u.username,
         u.is_verified,
         u.verification_code,
+        u.verification_code_expires_at,
         u.verified_at,
         u.is_deleted,
         u.deleted_at,
@@ -135,13 +137,14 @@ export default class UserRepo implements IUser {
         username,
         is_verified,
         verification_code,
+        verification_code_expires_at,
         verified_at,
         is_deleted,
         deleted_at,
         created_at,
         updated_at
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now_utc())
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, now_utc())
       `,
         [
           id,
@@ -150,6 +153,7 @@ export default class UserRepo implements IUser {
           user.username.toString(),
           user.isVerified,
           user.verificationCode,
+          user.verificationCodeExpiresAt,
           user.verifiedAt,
           user.isDeleted ?? false,
           user.deletedAt ?? null,
@@ -170,9 +174,10 @@ export default class UserRepo implements IUser {
         username = $4,
         is_verified = $5,
         verification_code = $6,
-        verified_at = $7,
-        is_deleted = $8,
-        deleted_at = $9,
+        verification_code_expires_at = $7,
+        verified_at = $8,
+        is_deleted = $9,
+        deleted_at = $10,
         updated_at = now_utc()
       WHERE id = $1
       `,
@@ -183,6 +188,7 @@ export default class UserRepo implements IUser {
           user.username.toString(),
           user.isVerified,
           user.verificationCode,
+          user.verificationCodeExpiresAt,
           user.verifiedAt,
           user.isDeleted ?? false,
           user.deletedAt ?? null,
@@ -335,6 +341,7 @@ export default class UserRepo implements IUser {
           u.username,
           u.is_verified,
           u.verification_code,
+          u.verification_code_expires_at,
           u.verified_at,
           u.is_deleted,
           u.deleted_at,
@@ -351,6 +358,7 @@ export default class UserRepo implements IUser {
       `UPDATE auth.users
        SET is_verified = true,
            verification_code = NULL,
+           verification_code_expires_at = NULL,
            verified_at = now_utc(),
            updated_at = now_utc()
        WHERE email = $1`,

@@ -17,6 +17,7 @@ CREATE TABLE
         hashed_password non_empty_text NOT NULL,
         is_verified boolean NOT NULL DEFAULT false,
         verification_code text NULL,
+        verification_code_expires_at timestamptz NULL,
         verified_at timestamptz NULL,
         created_at timestamptz NOT NULL DEFAULT now_utc (),
         updated_at timestamptz NOT NULL DEFAULT now_utc ()

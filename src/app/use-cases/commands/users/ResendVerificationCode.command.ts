@@ -5,6 +5,8 @@ import { IMailer } from "../../../interfaces/Mailer.port";
 import { IUser } from "../../../interfaces/User.port";
 
 export class ResendVerificationCode {
+  private static readonly VERIFICATION_CODE_TTL_MS = 30 * 60 * 1000;
+
   constructor(
     private readonly userRepo: IUser,
     private readonly hasher: IHasher,
@@ -22,7 +24,10 @@ export class ResendVerificationCode {
 
     const code = this.mailer.genCode(8);
     const verificationCodeHash = await this.hasher.hash(code);
-    user.setVerificationCode(verificationCodeHash);
+    user.setVerificationCode(
+      verificationCodeHash,
+      new Date(Date.now() + ResendVerificationCode.VERIFICATION_CODE_TTL_MS),
+    );
     await this.userRepo.save(user);
 
     await this.mailer.send(

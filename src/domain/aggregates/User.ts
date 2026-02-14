@@ -11,6 +11,7 @@ export type UserProps = {
   username: Username;
   isVerified: boolean;
   verificationCode: string | null;
+  verificationCodeExpiresAt: Date | null;
   verifiedAt: Date | null;
   isDeleted: boolean;
   role: Role;
@@ -25,6 +26,7 @@ export type UserCreateProps = {
   id?: string;
   isVerified?: boolean;
   verificationCode?: string | null;
+  verificationCodeExpiresAt?: Date | null;
   verifiedAt?: Date | null;
   isDeleted?: boolean;
   deletedAt?: Date | null;
@@ -39,6 +41,7 @@ export type UserDTO = {
   password: string;
   is_verified: boolean;
   verification_code: string | null;
+  verification_code_expires_at: Date | null;
   verified_at: Date | null;
   is_deleted: boolean;
   deleted_at: Date | null;
@@ -171,6 +174,7 @@ export class User {
       username: Username.create(input.username),
       isVerified: input.isVerified ?? false,
       verificationCode: input.verificationCode ?? null,
+      verificationCodeExpiresAt: input.verificationCodeExpiresAt ?? null,
       verifiedAt: input.verifiedAt ?? null,
       isDeleted: input.isDeleted ?? false,
       createdAt: input.createdAt ?? now,
@@ -188,6 +192,7 @@ export class User {
     username: string;
     isVerified: boolean;
     verificationCode: string | null;
+    verificationCodeExpiresAt: Date | null;
     verifiedAt: Date | null;
     isDeleted: boolean;
     deletedAt: Date | null;
@@ -201,6 +206,7 @@ export class User {
       username: Username.create(props.username),
       isVerified: props.isVerified,
       verificationCode: props.verificationCode,
+      verificationCodeExpiresAt: props.verificationCodeExpiresAt,
       verifiedAt: props.verifiedAt,
       isDeleted: props.isDeleted,
       createdAt: props.createdAt,
@@ -233,6 +239,10 @@ export class User {
     return this.props.verificationCode;
   }
 
+  get verificationCodeExpiresAt(): Date | null {
+    return this.props.verificationCodeExpiresAt;
+  }
+
   get verifiedAt(): Date | null {
     return this.props.verifiedAt;
   }
@@ -261,10 +271,12 @@ export class User {
     this.props.isVerified = true;
     this.props.verifiedAt = new Date();
     this.props.verificationCode = null;
+    this.props.verificationCodeExpiresAt = null;
   }
 
-  setVerificationCode(code: string): void {
+  setVerificationCode(code: string, expiresAt: Date): void {
     this.props.verificationCode = code.trim();
+    this.props.verificationCodeExpiresAt = expiresAt;
     this.props.verifiedAt = null;
     this.props.isVerified = false;
   }
@@ -316,6 +328,7 @@ export class User {
     passwordHash: string;
     isVerified: boolean;
     verificationCode: string | null;
+    verificationCodeExpiresAt: Date | null;
     verifiedAt: Date | null;
     isDeleted: boolean;
     deletedAt: Date | null;
@@ -329,6 +342,7 @@ export class User {
       passwordHash: this.passwordHash,
       isVerified: this.isVerified,
       verificationCode: this.verificationCode,
+      verificationCodeExpiresAt: this.verificationCodeExpiresAt,
       verifiedAt: this.verifiedAt,
       isDeleted: this.isDeleted,
       deletedAt: this.deletedAt,
@@ -345,6 +359,7 @@ export class User {
       password: this.passwordHash,
       is_verified: this.isVerified,
       verification_code: this.verificationCode,
+      verification_code_expires_at: this.verificationCodeExpiresAt,
       verified_at: this.verifiedAt,
       is_deleted: this.isDeleted,
       deleted_at: this.deletedAt,

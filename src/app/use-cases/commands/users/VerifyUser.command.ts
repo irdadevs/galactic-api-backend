@@ -27,6 +27,13 @@ export class VerifyUser {
       throw ErrorFactory.presentation("USERS.INVALID_VERIFICATION_CODE");
     }
 
+    if (
+      !user.verificationCodeExpiresAt ||
+      user.verificationCodeExpiresAt.getTime() < Date.now()
+    ) {
+      throw ErrorFactory.presentation("USERS.VERIFICATION_CODE_EXPIRED");
+    }
+
     const isValidCode = await this.hasher.compare(
       dto.code,
       user.verificationCode,

@@ -6,6 +6,8 @@ import { ErrorFactory } from "../../../../utils/errors/Error.map";
 import { IMailer } from "../../../interfaces/Mailer.port";
 
 export class SignupUser {
+  private static readonly VERIFICATION_CODE_TTL_MS = 30 * 60 * 1000;
+
   constructor(
     private readonly userRepo: IUser,
     private readonly hasher: IHasher,
@@ -42,7 +44,10 @@ export class SignupUser {
     });
     const code = this.mailer.genCode(8);
     const verificationCodeHash = await this.hasher.hash(code);
-    user.setVerificationCode(verificationCodeHash);
+    user.setVerificationCode(
+      verificationCodeHash,
+      new Date(Date.now() + SignupUser.VERIFICATION_CODE_TTL_MS),
+    );
 
     await this.userRepo.save(user);
 

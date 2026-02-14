@@ -96,6 +96,11 @@ export const ErrorMap = {
     httpCode: 400,
     public: true,
   },
+  VERIFICATION_CODE_EXPIRED: {
+    code: "USERS.VERIFICATION_CODE_EXPIRED",
+    httpCode: 400,
+    public: true,
+  },
   EMAIL_EXIST_SIGNUP: {
     code: "USERS.EMAIL_EXIST_SIGNUP",
     httpCode: 400,
@@ -293,6 +298,8 @@ export const ErrorMessages: Record<ErrorCode, string> = {
     "Email is not verified. Complete verification first.",
   [ErrorMap.INVALID_VERIFICATION_CODE.code]:
     "Invalid verification code.",
+  [ErrorMap.VERIFICATION_CODE_EXPIRED.code]:
+    "Verification code expired. Request a new code.",
   [ErrorMap.SESSION_EXPIRED.code]: "Expired session.",
   [ErrorMap.REFRESH_REUSED.code]: "Session refresh token reused.",
   [ErrorMap.EMAIL_EXIST_SIGNUP.code]:
