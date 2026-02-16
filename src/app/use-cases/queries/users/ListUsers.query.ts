@@ -1,6 +1,7 @@
 import { ICache } from "../../../interfaces/Cache.port";
 import { User } from "../../../../domain/aggregates/User";
 import { IUser, ListUsersQuery } from "../../../interfaces/User.port";
+import { TTL_MAP } from "../../../../utils/TTL.map";
 
 export class ListUsers {
   constructor(
@@ -12,7 +13,7 @@ export class ListUsers {
     query: ListUsersQuery,
   ): Promise<{ rows: User[]; total: number }> {
     const result = await this.repo.list(query);
-    await this.cache.set("users:list", result.rows);
+    await this.cache.set("users:list", result.rows, TTL_MAP.oneWeek);
     return result;
   }
 }
