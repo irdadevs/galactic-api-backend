@@ -196,6 +196,22 @@ describe("User aggregate", () => {
     expect(user.username).toBe(validInput.username);
   });
 
+  it("changes role when different", () => {
+    const user = User.create(validInput);
+
+    user.changeRole("Admin");
+
+    expect(user.role).toBe("Admin");
+  });
+
+  it("keeps role when unchanged", () => {
+    const user = User.create(validInput);
+
+    user.changeRole("User");
+
+    expect(user.role).toBe("User");
+  });
+
   it("soft deletes and restores", () => {
     const user = User.create(validInput);
 

@@ -2,6 +2,7 @@ import {
   Email,
   PasswordHash,
   User,
+  UserRole,
   Username,
   Uuid,
 } from "../../domain/aggregates/User";
@@ -24,6 +25,7 @@ export interface IUser {
   changeEmail(id: Uuid, email: Email): Promise<User>;
   changePassword(id: Uuid, hash: PasswordHash): Promise<User>;
   changeUsername(id: Uuid, username: Username): Promise<User>;
+  changeRole(id: Uuid, role: UserRole): Promise<User>;
   verify(email: Email): Promise<void>;
   softDelete(id: Uuid, at?: Date): Promise<void>;
   restore(id: Uuid, at?: Date): Promise<void>;

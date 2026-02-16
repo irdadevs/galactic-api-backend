@@ -305,6 +305,14 @@ export class User {
     this.props.username = next;
   }
 
+  changeRole(value: UserRole): void {
+    const next = Role.create(value);
+    if (next.equals(this.props.role)) {
+      return;
+    }
+    this.props.role = next;
+  }
+
   softDelete(at?: Date): void {
     if (this.props.isDeleted) {
       return;

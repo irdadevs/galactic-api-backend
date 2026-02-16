@@ -297,6 +297,21 @@ export default class UserRepo implements IUser {
     return user;
   }
 
+  async changeRole(id: Uuid, role: UserRole): Promise<User> {
+    const user = await this.findById(id);
+
+    if (!user) {
+      throw ErrorFactory.infra("SHARED.NOT_FOUND", {
+        sourceType: "user",
+        id: id.toString(),
+      });
+    }
+
+    user.changeRole(role);
+
+    return this.save(user);
+  }
+
   async list(query: ListUsersQuery): Promise<{ rows: User[]; total: number }> {
     const params: any[] = [];
     const conditions: string[] = [];

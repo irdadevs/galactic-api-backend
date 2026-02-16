@@ -5,6 +5,7 @@ import { HealthQuery } from "../../app/use-cases/queries/Health.query";
 import { AuthService } from "../../app/app-services/users/Auth.service";
 import { ChangeEmailDTO } from "../security/users/ChangeEmail.dto";
 import { ChangePasswordDTO } from "../security/users/ChangePassword.dto";
+import { ChangeRoleDTO } from "../security/users/ChangeRole.dto";
 import { ChangeUsernameDTO } from "../security/users/ChangeUsername.dto";
 import { FindUserByEmailDTO } from "../security/users/FindUserByEmail.dto";
 import { FindUserByIdDTO } from "../security/users/FindUserById.dto";
@@ -176,6 +177,28 @@ export class UserController {
       await this.platformService.changeUsername(
         Uuid.create(req.auth.userId),
         parsed.data,
+      );
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public changeRole = async (req: Request, res: Response) => {
+    try {
+      const parsedParams = FindUserByIdDTO.safeParse(req.params);
+      if (!parsedParams.success) {
+        return invalidBody(res, parsedParams.error);
+      }
+
+      const parsedBody = ChangeRoleDTO.safeParse(req.body);
+      if (!parsedBody.success) {
+        return invalidBody(res, parsedBody.error);
+      }
+
+      await this.platformService.changeRole(
+        Uuid.create(parsedParams.data.id),
+        parsedBody.data,
       );
       return res.status(204).send();
     } catch (err: unknown) {

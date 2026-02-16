@@ -24,6 +24,7 @@ import { SignupUser } from "./app/use-cases/commands/users/SignupUser.command";
 import { VerifyUser } from "./app/use-cases/commands/users/VerifyUser.command";
 import { ChangeEmail } from "./app/use-cases/commands/users/ChangeEmail.command";
 import { ChangePassword } from "./app/use-cases/commands/users/ChangePassword.command";
+import { ChangeRole } from "./app/use-cases/commands/users/ChangeRole.command";
 import { ChangeUsername } from "./app/use-cases/commands/users/ChangeUsername.command";
 import { ResendVerificationCode } from "./app/use-cases/commands/users/ResendVerificationCode.command";
 import { ListUsers } from "./app/use-cases/queries/users/ListUsers.query";
@@ -130,6 +131,7 @@ async function start(): Promise<void> {
       sessionRepo,
       userCache,
     );
+    const changeRoleUser = new ChangeRole(userRepo, sessionRepo, userCache);
     const changeUsernameUser = new ChangeUsername(userRepo, userCache);
     const listUsers = new ListUsers(userRepo, userCache);
     const softDeleteUser = new SoftDeleteUser(userRepo, userCache);
@@ -154,6 +156,7 @@ async function start(): Promise<void> {
       resendVerificationCode,
       changeEmailUser,
       changePasswordUser,
+      changeRoleUser,
       changeUsernameUser,
     );
     const lifecycleService = new LifecycleService(softDeleteUser, restoreUser);
