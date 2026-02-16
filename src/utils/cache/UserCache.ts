@@ -23,8 +23,8 @@ export type CachedListUsersResult = {
 };
 
 export const USER_CACHE_POLICY = {
-  userTtl: TTL_MAP.sixHours,
-  usersListTtl: TTL_MAP.oneDay,
+  userTtl: TTL_MAP.oneDay,
+  usersListTtl: TTL_MAP.oneWeek,
 } as const;
 
 const USERS_PREFIX = "users";
@@ -32,8 +32,10 @@ const USERS_LIST_PREFIX = `${USERS_PREFIX}:list`;
 
 export const UserCacheKeys = {
   byId: (id: string): string => `${USERS_PREFIX}:by-id:${id}`,
-  byEmail: (email: string): string => `${USERS_PREFIX}:by-email:${email.trim().toLowerCase()}`,
-  byUsername: (username: string): string => `${USERS_PREFIX}:by-username:${username.trim()}`,
+  byEmail: (email: string): string =>
+    `${USERS_PREFIX}:by-email:${email.trim().toLowerCase()}`,
+  byUsername: (username: string): string =>
+    `${USERS_PREFIX}:by-username:${username.trim()}`,
   listPrefix: (): string => USERS_LIST_PREFIX,
   list: (query: ListUsersQuery): string =>
     `${USERS_LIST_PREFIX}:${JSON.stringify(normalizeListQuery(query))}`,
