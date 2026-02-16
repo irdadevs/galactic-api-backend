@@ -4,6 +4,7 @@ import { SignupDTO } from "../../../../presentation/security/users/Signup.dto";
 import { Email, User, Username } from "../../../../domain/aggregates/User";
 import { ErrorFactory } from "../../../../utils/errors/Error.map";
 import { IMailer } from "../../../interfaces/Mailer.port";
+import { UserCacheService } from "../../../app-services/users/UserCache.service";
 
 export class SignupUser {
   private static readonly VERIFICATION_CODE_TTL_MS = 30 * 60 * 1000;
@@ -12,6 +13,7 @@ export class SignupUser {
     private readonly userRepo: IUser,
     private readonly hasher: IHasher,
     private readonly mailer: IMailer,
+    private readonly userCache: UserCacheService,
   ) {}
 
   async execute(dto: SignupDTO) {
@@ -50,6 +52,8 @@ export class SignupUser {
     );
 
     await this.userRepo.save(user);
+    await this.userCache.setUser(user);
+    await this.userCache.invalidateList();
 
     await this.mailer.send(
       Email.create(dto.email),

@@ -65,6 +65,32 @@ export class RedisRepo implements ICache {
     await this.client.del(this.k(key));
   }
 
+  async delMany(keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    await this.connect();
+    await this.client.del(keys.map((key) => this.k(key)));
+  }
+
+  async delByPrefix(prefix: string): Promise<number> {
+    await this.connect();
+
+    let deleted = 0;
+    const pattern = this.k(`${prefix}*`);
+
+    for await (const key of this.client.scanIterator({
+      MATCH: pattern,
+      COUNT: 100,
+    })) {
+      const keys = Array.isArray(key) ? key : [key];
+      if (keys.length > 0) {
+        await this.client.del(keys);
+        deleted += keys.length;
+      }
+    }
+
+    return deleted;
+  }
+
   async close(): Promise<void> {
     if (this.client.isOpen) {
       console.log(

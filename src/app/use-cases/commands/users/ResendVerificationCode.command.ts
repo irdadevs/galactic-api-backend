@@ -3,6 +3,7 @@ import { ResendVerificationDTO } from "../../../../presentation/security/users/R
 import { IHasher } from "../../../interfaces/Hasher.port";
 import { IMailer } from "../../../interfaces/Mailer.port";
 import { IUser } from "../../../interfaces/User.port";
+import { UserCacheService } from "../../../app-services/users/UserCache.service";
 
 export class ResendVerificationCode {
   private static readonly VERIFICATION_CODE_TTL_MS = 30 * 60 * 1000;
@@ -11,6 +12,7 @@ export class ResendVerificationCode {
     private readonly userRepo: IUser,
     private readonly hasher: IHasher,
     private readonly mailer: IMailer,
+    private readonly userCache: UserCacheService,
   ) {}
 
   async execute(dto: ResendVerificationDTO): Promise<void> {
@@ -29,6 +31,7 @@ export class ResendVerificationCode {
       new Date(Date.now() + ResendVerificationCode.VERIFICATION_CODE_TTL_MS),
     );
     await this.userRepo.save(user);
+    await this.userCache.invalidateForMutation(user);
 
     await this.mailer.send(
       email,

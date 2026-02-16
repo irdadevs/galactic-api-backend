@@ -2,9 +2,13 @@ import { Username, Uuid } from "../../../../domain/aggregates/User";
 import { ChangeUsernameDTO } from "../../../../presentation/security/users/ChangeUsername.dto";
 import { ErrorFactory } from "../../../../utils/errors/Error.map";
 import { IUser } from "../../../interfaces/User.port";
+import { UserCacheService } from "../../../app-services/users/UserCache.service";
 
 export class ChangeUsername {
-  constructor(private readonly userRepo: IUser) {}
+  constructor(
+    private readonly userRepo: IUser,
+    private readonly userCache: UserCacheService,
+  ) {}
 
   async execute(userId: Uuid, dto: ChangeUsernameDTO) {
     const user = await this.userRepo.findById(userId);
@@ -25,9 +29,11 @@ export class ChangeUsername {
       });
     }
 
+    const previous = { email: user.email, username: user.username };
     user.changeUsername(dto.newUsername);
 
     await this.userRepo.save(user);
+    await this.userCache.invalidateForMutation(user, previous);
 
     return true;
   }

@@ -4,12 +4,14 @@ import { ErrorFactory } from "../../../../utils/errors/Error.map";
 import { ISession } from "../../../interfaces/Session.port";
 import { ChangePasswordDTO } from "../../../../presentation/security/users/ChangePassword.dto";
 import { Uuid } from "../../../../domain/aggregates/User";
+import { UserCacheService } from "../../../app-services/users/UserCache.service";
 
 export class ChangePassword {
   constructor(
     private readonly userRepo: IUser,
     private readonly hasher: IHasher,
     private readonly sessionRepo: ISession,
+    private readonly userCache: UserCacheService,
   ) {}
 
   async execute(userId: Uuid, dto: ChangePasswordDTO) {
@@ -26,6 +28,7 @@ export class ChangePassword {
     user.changePasswordHash(newHash);
 
     await this.userRepo.save(user);
+    await this.userCache.invalidateForMutation(user);
 
     await this.sessionRepo.revokeAllForUser(userId.toString());
 

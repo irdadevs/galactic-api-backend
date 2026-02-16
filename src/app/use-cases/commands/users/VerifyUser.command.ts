@@ -3,11 +3,13 @@ import { VerifyDTO } from "../../../../presentation/security/users/Verify.dto";
 import { ErrorFactory } from "../../../../utils/errors/Error.map";
 import { IHasher } from "../../../interfaces/Hasher.port";
 import { IUser } from "../../../interfaces/User.port";
+import { UserCacheService } from "../../../app-services/users/UserCache.service";
 
 export class VerifyUser {
   constructor(
     private readonly userRepo: IUser,
     private readonly hasher: IHasher,
+    private readonly userCache: UserCacheService,
   ) {}
 
   async execute(dto: VerifyDTO) {
@@ -45,6 +47,7 @@ export class VerifyUser {
     user.verifyEmail();
 
     await this.userRepo.save(user);
+    await this.userCache.invalidateForMutation(user);
 
     return true;
   }

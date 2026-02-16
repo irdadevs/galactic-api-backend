@@ -35,6 +35,7 @@ import { LogoutSession } from "./app/use-cases/commands/users/LogoutSession.comm
 import { LogoutAllSessions } from "./app/use-cases/commands/users/LogoutAllSessions.command";
 import { PlatformService } from "./app/app-services/users/Platform.service";
 import { LifecycleService } from "./app/app-services/users/Lifecycle.service";
+import { UserCacheService } from "./app/app-services/users/UserCache.service";
 import { UserController } from "./presentation/controllers/User.controller";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
@@ -109,31 +110,34 @@ async function start(): Promise<void> {
     const hasher = new HasherRepo();
     const mailer = new MailerRepo();
     const jwtService = new JwtService();
+    const userCache = new UserCacheService(cache);
     //! App layer
     // Use-cases
     const healthCheck = new HealthQuery();
     const loginUser = new LoginUser(userRepo, hasher);
-    const signupUser = new SignupUser(userRepo, hasher, mailer);
-    const verifyUser = new VerifyUser(userRepo, hasher);
+    const signupUser = new SignupUser(userRepo, hasher, mailer, userCache);
+    const verifyUser = new VerifyUser(userRepo, hasher, userCache);
     const resendVerificationCode = new ResendVerificationCode(
       userRepo,
       hasher,
       mailer,
+      userCache,
     );
-    const changeEmailUser = new ChangeEmail(userRepo);
+    const changeEmailUser = new ChangeEmail(userRepo, userCache);
     const changePasswordUser = new ChangePassword(
       userRepo,
       hasher,
       sessionRepo,
+      userCache,
     );
-    const changeUsernameUser = new ChangeUsername(userRepo);
-    const listUsers = new ListUsers(userRepo, cache);
-    const softDeleteUser = new SoftDeleteUser(userRepo);
-    const restoreUser = new RestoreUser(userRepo);
+    const changeUsernameUser = new ChangeUsername(userRepo, userCache);
+    const listUsers = new ListUsers(userRepo, userCache);
+    const softDeleteUser = new SoftDeleteUser(userRepo, userCache);
+    const restoreUser = new RestoreUser(userRepo, userCache);
     const refreshSession = new RefreshSession(jwtService, sessionRepo, hasher);
     const logoutSession = new LogoutSession(sessionRepo);
     const logoutAllSessions = new LogoutAllSessions(sessionRepo);
-    const findUser = new FindUser(userRepo);
+    const findUser = new FindUser(userRepo, userCache);
     // App-services
     const authService = new AuthService(
       loginUser,
