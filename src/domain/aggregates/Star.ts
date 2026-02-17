@@ -238,17 +238,31 @@ const STAR_TYPE_CLASS: Record<StarType, StarClass> = {
   "Neutron star": "N",
 };
 
-const pickStarType = (): StarType => {
-  const total = STAR_PROBABILITIES.reduce((sum, value) => sum + value, 0);
+export const DEFAULT_STAR_TYPE_EXCLUSIONS: StarType[] = [];
+
+export const sampleStarType = (excluded: StarType[] = []): StarType => {
+  const excludedSet = new Set(excluded);
+  const candidates = ALLOWED_STAR_TYPES.map((type, index) => ({
+    type,
+    probability: STAR_PROBABILITIES[index],
+  })).filter((candidate) => !excludedSet.has(candidate.type));
+
+  if (candidates.length === 0) {
+    throw ErrorFactory.domain("DOMAIN.INVALID_STAR_TYPE", {
+      type: "No star type candidates available",
+    });
+  }
+
+  const total = candidates.reduce((sum, candidate) => sum + candidate.probability, 0);
   const roll = Dice.roll(total);
   let cursor = 0;
-  for (let i = 0; i < ALLOWED_STAR_TYPES.length; i += 1) {
-    cursor += STAR_PROBABILITIES[i];
+  for (const candidate of candidates) {
+    cursor += candidate.probability;
     if (roll <= cursor) {
-      return ALLOWED_STAR_TYPES[i];
+      return candidate.type;
     }
   }
-  return ALLOWED_STAR_TYPES[ALLOWED_STAR_TYPES.length - 1];
+  return candidates[candidates.length - 1].type;
 };
 
 const randomBetween = (min: number, max: number): number => {
@@ -292,7 +306,9 @@ export class Star {
   }
 
   static create(input: StarCreateProps): Star {
-    const starType = StarTypeValue.create(input.starType ?? pickStarType());
+    const starType = StarTypeValue.create(
+      input.starType ?? sampleStarType(DEFAULT_STAR_TYPE_EXCLUSIONS),
+    );
     const resolvedClass = resolveClassForType(starType.toString());
     const starClass = input.starClass
       ? StarClassValue.create(input.starClass)

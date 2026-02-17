@@ -3,7 +3,7 @@ import { Asteroid } from "../../../domain/aggregates/Asteroid";
 import { Galaxy, GalaxyShapeValue } from "../../../domain/aggregates/Galaxy";
 import { Moon } from "../../../domain/aggregates/Moon";
 import { Planet } from "../../../domain/aggregates/Planet";
-import { Star, StarType } from "../../../domain/aggregates/Star";
+import { Star, StarType, sampleStarType } from "../../../domain/aggregates/Star";
 import { System } from "../../../domain/aggregates/System";
 import { Uuid } from "../../../domain/aggregates/User";
 import { Dice } from "../../../utils/Dice.class";
@@ -33,15 +33,7 @@ export type ProceduralRepos = {
   asteroid: IAsteroid;
 };
 
-const NON_COLLAPSED_STAR_TYPES: StarType[] = [
-  "Blue supergiant",
-  "Blue giant",
-  "White dwarf",
-  "Brown dwarf",
-  "Yellow dwarf",
-  "Subdwarf",
-  "Red dwarf",
-];
+const COMPANION_STAR_EXCLUSIONS: StarType[] = ["Black hole", "Neutron star"];
 
 const ORBITAL_STARTER_BY_STAR_TYPE: Record<StarType, number> = {
   "Blue supergiant": 4,
@@ -59,14 +51,6 @@ export class GalaxyLifecycleService {
   private randomInt(min: number, max: number): number {
     if (max <= min) return min;
     return min + Dice.roll(max - min + 1, true);
-  }
-
-  private pickOne<T>(values: T[]): T {
-    return values[Dice.roll(values.length, true)];
-  }
-
-  private pickNonCollapsedStarType(): StarType {
-    return this.pickOne(NON_COLLAPSED_STAR_TYPES);
   }
 
   private randomSystemPosition(
@@ -145,7 +129,10 @@ export class GalaxyLifecycleService {
 
     for (let i = 1; i < total; i += 1) {
       stars.push(
-        this.createStarForSystem(systemId, this.pickNonCollapsedStarType()),
+        this.createStarForSystem(
+          systemId,
+          sampleStarType(COMPANION_STAR_EXCLUSIONS),
+        ),
       );
     }
 
