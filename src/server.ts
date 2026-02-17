@@ -38,9 +38,23 @@ import { PlatformService } from "./app/app-services/users/Platform.service";
 import { LifecycleService } from "./app/app-services/users/Lifecycle.service";
 import { UserCacheService } from "./app/app-services/users/UserCache.service";
 import { UserController } from "./presentation/controllers/User.controller";
+import { GalaxyController } from "./presentation/controllers/Galaxy.controller";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
 import { MailerRepo } from "./infra/repos/Mailer.repository";
+import GalaxyRepo from "./infra/repos/Galaxy.repository";
+import SystemRepo from "./infra/repos/System.repository";
+import StarRepo from "./infra/repos/Star.repository";
+import PlanetRepo from "./infra/repos/Planet.repository";
+import MoonRepo from "./infra/repos/Moon.repository";
+import AsteroidRepo from "./infra/repos/Asteroid.repository";
+import { CreateGalaxy } from "./app/use-cases/commands/galaxies/CreateGalaxy.command";
+import { ChangeGalaxyName } from "./app/use-cases/commands/galaxies/ChangeGalaxyName.command";
+import { ChangeGalaxyShape } from "./app/use-cases/commands/galaxies/ChangeGalaxyShape.command";
+import { DeleteGalaxy } from "./app/use-cases/commands/galaxies/DeleteGalaxy.command";
+import { FindGalaxy } from "./app/use-cases/queries/galaxies/FindGalaxy.query";
+import { ListGalaxies } from "./app/use-cases/queries/galaxies/ListGalaxies.query";
+import { PopulateGalaxy } from "./app/use-cases/queries/galaxies/PopulateGalaxy.query";
 
 // --------------------
 // Server config
@@ -107,6 +121,12 @@ async function start(): Promise<void> {
     // TODO: Here we will instanciate all that needs DI:
     //! Infra layer (repos)
     const userRepo = new UserRepo(postgres);
+    const galaxyRepo = new GalaxyRepo(postgres);
+    const systemRepo = new SystemRepo(postgres);
+    const starRepo = new StarRepo(postgres);
+    const planetRepo = new PlanetRepo(postgres);
+    const moonRepo = new MoonRepo(postgres);
+    const asteroidRepo = new AsteroidRepo(postgres);
     const sessionRepo = new SessionRepo(postgres._getPool());
     const hasher = new HasherRepo();
     const mailer = new MailerRepo();
@@ -140,6 +160,40 @@ async function start(): Promise<void> {
     const logoutSession = new LogoutSession(sessionRepo);
     const logoutAllSessions = new LogoutAllSessions(sessionRepo);
     const findUser = new FindUser(userRepo, userCache);
+    const createGalaxy = new CreateGalaxy(
+      uowFactory,
+      {
+        galaxy: (db) => new GalaxyRepo(db),
+        system: (db) => new SystemRepo(db),
+        star: (db) => new StarRepo(db),
+        planet: (db) => new PlanetRepo(db),
+        moon: (db) => new MoonRepo(db),
+        asteroid: (db) => new AsteroidRepo(db),
+      },
+    );
+    const changeGalaxyName = new ChangeGalaxyName(galaxyRepo);
+    const changeGalaxyShape = new ChangeGalaxyShape(galaxyRepo);
+    const deleteGalaxy = new DeleteGalaxy(
+      uowFactory,
+      {
+        galaxy: (db) => new GalaxyRepo(db),
+        system: (db) => new SystemRepo(db),
+        star: (db) => new StarRepo(db),
+        planet: (db) => new PlanetRepo(db),
+        moon: (db) => new MoonRepo(db),
+        asteroid: (db) => new AsteroidRepo(db),
+      },
+    );
+    const findGalaxy = new FindGalaxy(galaxyRepo);
+    const listGalaxies = new ListGalaxies(galaxyRepo);
+    const populateGalaxy = new PopulateGalaxy(
+      galaxyRepo,
+      systemRepo,
+      starRepo,
+      planetRepo,
+      moonRepo,
+      asteroidRepo,
+    );
     // App-services
     const authService = new AuthService(
       loginUser,
@@ -170,6 +224,15 @@ async function start(): Promise<void> {
       platformService,
       lifecycleService,
     );
+    const galaxyController = new GalaxyController(
+      createGalaxy,
+      changeGalaxyName,
+      changeGalaxyShape,
+      deleteGalaxy,
+      findGalaxy,
+      listGalaxies,
+      populateGalaxy,
+    );
     // Middlewares
     const authMiddleware = new AuthMiddleware(jwtService, {
       issuer: process.env.JWT_ISSUER!,
@@ -180,6 +243,7 @@ async function start(): Promise<void> {
     app.use(
       buildApiRouter({
         userController,
+        galaxyController,
         auth: authMiddleware,
         scope: scopeMiddleware,
       }),
