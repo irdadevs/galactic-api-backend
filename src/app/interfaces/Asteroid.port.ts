@@ -8,6 +8,7 @@ import { Uuid } from "../../domain/aggregates/User";
 
 export interface IAsteroid {
   create(asteroid: Asteroid): Promise<Asteroid>;
+  save(asteroid: Asteroid): Promise<Asteroid>;
   findById(id: Uuid): Promise<Asteroid | null>;
   findBySystem(systemId: Uuid): Promise<{ rows: Asteroid[]; total: number }>;
   findByName(name: AsteroidName): Promise<Asteroid | null>;

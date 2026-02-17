@@ -60,6 +60,10 @@ export default class PlanetRepo implements IPlanet {
   }
 
   async create(planet: Planet): Promise<Planet> {
+    return this.save(planet);
+  }
+
+  async save(planet: Planet): Promise<Planet> {
     const dto = planet.toDB();
     await this.db.query(
       `
@@ -81,6 +85,20 @@ export default class PlanetRepo implements IPlanet {
       VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13
       )
+      ON CONFLICT (id) DO UPDATE SET
+        system_id = EXCLUDED.system_id,
+        name = EXCLUDED.name,
+        type = EXCLUDED.type,
+        size = EXCLUDED.size,
+        orbital = EXCLUDED.orbital,
+        biome = EXCLUDED.biome,
+        relative_mass = EXCLUDED.relative_mass,
+        absolute_mass = EXCLUDED.absolute_mass,
+        relative_radius = EXCLUDED.relative_radius,
+        absolute_radius = EXCLUDED.absolute_radius,
+        gravity = EXCLUDED.gravity,
+        temperature = EXCLUDED.temperature,
+        updated_at = now_utc()
       `,
       [
         dto.id,

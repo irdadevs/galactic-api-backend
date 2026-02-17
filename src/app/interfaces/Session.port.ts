@@ -11,6 +11,7 @@ export type Session = {
 
 export interface ISession {
   create(session: Omit<Session, "createdAt">): Promise<void>;
+  save(session: Omit<Session, "createdAt">): Promise<void>;
 
   findById(id: string): Promise<Session | null>;
 

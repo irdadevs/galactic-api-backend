@@ -3,6 +3,7 @@ import { Uuid } from "../../domain/aggregates/User";
 
 export interface IMoon {
   create(moon: Moon): Promise<Moon>;
+  save(moon: Moon): Promise<Moon>;
   findById(id: Uuid): Promise<Moon | null>;
   findByPlanet(planetId: Uuid): Promise<{ rows: Moon[]; total: number }>;
   findByName(name: MoonName): Promise<Moon | null>;

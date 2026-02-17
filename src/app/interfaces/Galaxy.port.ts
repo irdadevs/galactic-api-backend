@@ -15,6 +15,7 @@ export type ListGalaxyQuery = {
 
 export interface IGalaxy {
   create(galaxy: Galaxy): Promise<Galaxy>;
+  save(galaxy: Galaxy): Promise<Galaxy>;
   findById(id: Uuid): Promise<Galaxy | null>;
   findByOwner(ownerId: Uuid): Promise<Galaxy | null>;
   findByName(name: GalaxyName): Promise<Galaxy | null>;

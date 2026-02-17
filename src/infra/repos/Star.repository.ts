@@ -64,6 +64,10 @@ export default class StarRepo implements IStar {
   }
 
   async create(star: Star): Promise<Star> {
+    return this.save(star);
+  }
+
+  async save(star: Star): Promise<Star> {
     const dto = star.toDB();
     await this.db.query(
       `
@@ -87,6 +91,22 @@ export default class StarRepo implements IStar {
       VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15
       )
+      ON CONFLICT (id) DO UPDATE SET
+        system_id = EXCLUDED.system_id,
+        name = EXCLUDED.name,
+        star_type = EXCLUDED.star_type,
+        star_class = EXCLUDED.star_class,
+        surface_temperature = EXCLUDED.surface_temperature,
+        color = EXCLUDED.color,
+        relative_mass = EXCLUDED.relative_mass,
+        absolute_mass = EXCLUDED.absolute_mass,
+        relative_radius = EXCLUDED.relative_radius,
+        absolute_radius = EXCLUDED.absolute_radius,
+        gravity = EXCLUDED.gravity,
+        is_main = EXCLUDED.is_main,
+        orbital = EXCLUDED.orbital,
+        orbital_starter = EXCLUDED.orbital_starter,
+        updated_at = now_utc()
       `,
       [
         dto.id,

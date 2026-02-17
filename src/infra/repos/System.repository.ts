@@ -41,6 +41,10 @@ export default class SystemRepo implements ISystem {
   }
 
   async create(system: System): Promise<System> {
+    return this.save(system);
+  }
+
+  async save(system: System): Promise<System> {
     const dto = system.toDB();
     await this.db.query(
       `
@@ -48,6 +52,13 @@ export default class SystemRepo implements ISystem {
         (id, galaxy_id, name, position_x, position_y, position_z)
       VALUES
         ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (id) DO UPDATE SET
+        galaxy_id = EXCLUDED.galaxy_id,
+        name = EXCLUDED.name,
+        position_x = EXCLUDED.position_x,
+        position_y = EXCLUDED.position_y,
+        position_z = EXCLUDED.position_z,
+        updated_at = now_utc()
       `,
       [
         dto.id,

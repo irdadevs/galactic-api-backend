@@ -7,6 +7,7 @@ import { Uuid } from "../../domain/aggregates/User";
 
 export interface IPlanet {
   create(planet: Planet): Promise<Planet>;
+  save(planet: Planet): Promise<Planet>;
   findById(id: Uuid): Promise<Planet | null>;
   findBySystem(systemId: Uuid): Promise<{ rows: Planet[]; total: number }>;
   findByName(name: PlanetName): Promise<Planet | null>;

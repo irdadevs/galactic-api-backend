@@ -41,6 +41,10 @@ export default class GalaxyRepo implements IGalaxy {
   }
 
   async create(galaxy: Galaxy): Promise<Galaxy> {
+    return this.save(galaxy);
+  }
+
+  async save(galaxy: Galaxy): Promise<Galaxy> {
     const dto = galaxy.toDB();
     await this.db.query(
       `
@@ -48,6 +52,13 @@ export default class GalaxyRepo implements IGalaxy {
         (id, owner_id, name, shape, system_count, created_at)
       VALUES
         ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (id) DO UPDATE SET
+        owner_id = EXCLUDED.owner_id,
+        name = EXCLUDED.name,
+        shape = EXCLUDED.shape,
+        system_count = EXCLUDED.system_count,
+        created_at = EXCLUDED.created_at,
+        updated_at = now_utc()
       `,
       [
         dto.id,

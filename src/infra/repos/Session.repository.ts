@@ -5,6 +5,10 @@ export class SessionRepo implements ISession {
   constructor(private readonly pool: Pool) {}
 
   async create(session: Omit<Session, "createdAt">): Promise<void> {
+    await this.save(session);
+  }
+
+  async save(session: Omit<Session, "createdAt">): Promise<void> {
     await this.pool.query(
       `
       INSERT INTO auth.user_sessions (
@@ -17,6 +21,13 @@ export class SessionRepo implements ISession {
         expires_at
       )
       VALUES ($1,$2,$3,$4,$5,$6,$7)
+      ON CONFLICT (id) DO UPDATE SET
+        user_id = EXCLUDED.user_id,
+        refresh_token_hash = EXCLUDED.refresh_token_hash,
+        user_agent = EXCLUDED.user_agent,
+        ip = EXCLUDED.ip,
+        is_revoked = EXCLUDED.is_revoked,
+        expires_at = EXCLUDED.expires_at
       `,
       [
         session.id,

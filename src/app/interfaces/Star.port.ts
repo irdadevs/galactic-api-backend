@@ -3,6 +3,7 @@ import { Uuid } from "../../domain/aggregates/User";
 
 export interface IStar {
   create(star: Star): Promise<Star>;
+  save(star: Star): Promise<Star>;
   findById(id: Uuid): Promise<Star | null>;
   findBySystem(systemId: Uuid): Promise<{ rows: Star[]; total: number }>;
   findByName(name: StarName): Promise<Star | null>;

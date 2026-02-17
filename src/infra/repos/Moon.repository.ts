@@ -50,6 +50,10 @@ export default class MoonRepo implements IMoon {
   }
 
   async create(moon: Moon): Promise<Moon> {
+    return this.save(moon);
+  }
+
+  async save(moon: Moon): Promise<Moon> {
     const dto = moon.toDB();
     await this.db.query(
       `
@@ -69,6 +73,18 @@ export default class MoonRepo implements IMoon {
       VALUES (
         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11
       )
+      ON CONFLICT (id) DO UPDATE SET
+        planet_id = EXCLUDED.planet_id,
+        name = EXCLUDED.name,
+        size = EXCLUDED.size,
+        orbital = EXCLUDED.orbital,
+        relative_mass = EXCLUDED.relative_mass,
+        absolute_mass = EXCLUDED.absolute_mass,
+        relative_radius = EXCLUDED.relative_radius,
+        absolute_radius = EXCLUDED.absolute_radius,
+        gravity = EXCLUDED.gravity,
+        temperature = EXCLUDED.temperature,
+        updated_at = now_utc()
       `,
       [
         dto.id,

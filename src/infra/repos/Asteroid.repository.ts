@@ -39,6 +39,10 @@ export default class AsteroidRepo implements IAsteroid {
   }
 
   async create(asteroid: Asteroid): Promise<Asteroid> {
+    return this.save(asteroid);
+  }
+
+  async save(asteroid: Asteroid): Promise<Asteroid> {
     const dto = asteroid.toDB();
     await this.db.query(
       `
@@ -46,6 +50,13 @@ export default class AsteroidRepo implements IAsteroid {
         id, system_id, name, type, size, orbital
       )
       VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (id) DO UPDATE SET
+        system_id = EXCLUDED.system_id,
+        name = EXCLUDED.name,
+        type = EXCLUDED.type,
+        size = EXCLUDED.size,
+        orbital = EXCLUDED.orbital,
+        updated_at = now_utc()
       `,
       [dto.id, dto.system_id, dto.name, dto.type, dto.size, dto.orbital],
     );
