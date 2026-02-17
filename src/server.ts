@@ -52,6 +52,7 @@ import { CreateGalaxy } from "./app/use-cases/commands/galaxies/CreateGalaxy.com
 import { ChangeGalaxyName } from "./app/use-cases/commands/galaxies/ChangeGalaxyName.command";
 import { ChangeGalaxyShape } from "./app/use-cases/commands/galaxies/ChangeGalaxyShape.command";
 import { DeleteGalaxy } from "./app/use-cases/commands/galaxies/DeleteGalaxy.command";
+import { GalaxyLifecycleService } from "./app/app-services/galaxies/GalaxyLifecycle.service";
 import { FindGalaxy } from "./app/use-cases/queries/galaxies/FindGalaxy.query";
 import { ListGalaxies } from "./app/use-cases/queries/galaxies/ListGalaxies.query";
 import { PopulateGalaxy } from "./app/use-cases/queries/galaxies/PopulateGalaxy.query";
@@ -160,6 +161,7 @@ async function start(): Promise<void> {
     const logoutSession = new LogoutSession(sessionRepo);
     const logoutAllSessions = new LogoutAllSessions(sessionRepo);
     const findUser = new FindUser(userRepo, userCache);
+    const galaxyLifecycle = new GalaxyLifecycleService();
     const createGalaxy = new CreateGalaxy(
       uowFactory,
       {
@@ -170,6 +172,7 @@ async function start(): Promise<void> {
         moon: (db) => new MoonRepo(db),
         asteroid: (db) => new AsteroidRepo(db),
       },
+      galaxyLifecycle,
     );
     const changeGalaxyName = new ChangeGalaxyName(galaxyRepo);
     const changeGalaxyShape = new ChangeGalaxyShape(galaxyRepo);
@@ -183,6 +186,7 @@ async function start(): Promise<void> {
         moon: (db) => new MoonRepo(db),
         asteroid: (db) => new AsteroidRepo(db),
       },
+      galaxyLifecycle,
     );
     const findGalaxy = new FindGalaxy(galaxyRepo);
     const listGalaxies = new ListGalaxies(galaxyRepo);
