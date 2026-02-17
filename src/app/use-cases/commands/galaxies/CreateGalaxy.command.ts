@@ -2,6 +2,7 @@ import { Galaxy, GalaxyName } from "../../../../domain/aggregates/Galaxy";
 import { CreateGalaxyDTO } from "../../../../presentation/security/galaxies/CreateGalaxy.dto";
 import { ErrorFactory } from "../../../../utils/errors/Error.map";
 import { UnitOfWorkFactory } from "../../../../config/db/UnitOfWork";
+import { GalaxyCacheService } from "../../../app-services/galaxies/GalaxyCache.service";
 import {
   GalaxyLifecycleService,
   ProceduralRepoFactories,
@@ -12,6 +13,7 @@ export class CreateGalaxy {
     private readonly uowFactory: UnitOfWorkFactory,
     private readonly repoFactories: ProceduralRepoFactories,
     private readonly lifecycle: GalaxyLifecycleService,
+    private readonly galaxyCache: GalaxyCacheService,
   ) {}
 
   async execute(dto: CreateGalaxyDTO & { ownerId: string }): Promise<Galaxy> {
@@ -45,6 +47,8 @@ export class CreateGalaxy {
       await this.lifecycle.createGalaxyTree(galaxy, repos);
 
       await uow.commit();
+      await this.galaxyCache.setGalaxy(galaxy);
+      await this.galaxyCache.invalidateList();
       return galaxy;
     } catch (error) {
       await uow.rollback();

@@ -37,6 +37,7 @@ import { LogoutAllSessions } from "./app/use-cases/commands/users/LogoutAllSessi
 import { PlatformService } from "./app/app-services/users/Platform.service";
 import { LifecycleService } from "./app/app-services/users/Lifecycle.service";
 import { UserCacheService } from "./app/app-services/users/UserCache.service";
+import { GalaxyCacheService } from "./app/app-services/galaxies/GalaxyCache.service";
 import { UserController } from "./presentation/controllers/User.controller";
 import { GalaxyController } from "./presentation/controllers/Galaxy.controller";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
@@ -133,6 +134,7 @@ async function start(): Promise<void> {
     const mailer = new MailerRepo();
     const jwtService = new JwtService();
     const userCache = new UserCacheService(cache);
+    const galaxyCache = new GalaxyCacheService(cache);
     //! App layer
     // Use-cases
     const healthCheck = new HealthQuery();
@@ -173,9 +175,10 @@ async function start(): Promise<void> {
         asteroid: (db) => new AsteroidRepo(db),
       },
       galaxyLifecycle,
+      galaxyCache,
     );
-    const changeGalaxyName = new ChangeGalaxyName(galaxyRepo);
-    const changeGalaxyShape = new ChangeGalaxyShape(galaxyRepo);
+    const changeGalaxyName = new ChangeGalaxyName(galaxyRepo, galaxyCache);
+    const changeGalaxyShape = new ChangeGalaxyShape(galaxyRepo, galaxyCache);
     const deleteGalaxy = new DeleteGalaxy(
       uowFactory,
       {
@@ -187,9 +190,10 @@ async function start(): Promise<void> {
         asteroid: (db) => new AsteroidRepo(db),
       },
       galaxyLifecycle,
+      galaxyCache,
     );
-    const findGalaxy = new FindGalaxy(galaxyRepo);
-    const listGalaxies = new ListGalaxies(galaxyRepo);
+    const findGalaxy = new FindGalaxy(galaxyRepo, galaxyCache);
+    const listGalaxies = new ListGalaxies(galaxyRepo, galaxyCache);
     const populateGalaxy = new PopulateGalaxy(
       galaxyRepo,
       systemRepo,
@@ -197,6 +201,7 @@ async function start(): Promise<void> {
       planetRepo,
       moonRepo,
       asteroidRepo,
+      galaxyCache,
     );
     // App-services
     const authService = new AuthService(

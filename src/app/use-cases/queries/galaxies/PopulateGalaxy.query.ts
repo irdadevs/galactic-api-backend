@@ -1,5 +1,6 @@
 import { Uuid } from "../../../../domain/aggregates/User";
 import { ErrorFactory } from "../../../../utils/errors/Error.map";
+import { GalaxyCacheService } from "../../../app-services/galaxies/GalaxyCache.service";
 import { IAsteroid } from "../../../interfaces/Asteroid.port";
 import { IGalaxy } from "../../../interfaces/Galaxy.port";
 import { IMoon } from "../../../interfaces/Moon.port";
@@ -28,9 +29,13 @@ export class PopulateGalaxy {
     private readonly planetRepo: IPlanet,
     private readonly moonRepo: IMoon,
     private readonly asteroidRepo: IAsteroid,
+    private readonly galaxyCache: GalaxyCacheService,
   ) {}
 
   async execute(galaxyId: Uuid): Promise<PopulatedGalaxy> {
+    const cached = await this.galaxyCache.getPopulate(galaxyId.toString());
+    if (cached) return cached;
+
     const galaxy = await this.galaxyRepo.findById(galaxyId);
     if (!galaxy) {
       throw ErrorFactory.presentation("SHARED.NOT_FOUND", {
@@ -71,9 +76,11 @@ export class PopulateGalaxy {
       }),
     );
 
-    return {
+    const populated = {
       galaxy: galaxy.toJSON(),
       systems,
     };
+    await this.galaxyCache.setPopulate(galaxyId.toString(), populated);
+    return populated;
   }
 }

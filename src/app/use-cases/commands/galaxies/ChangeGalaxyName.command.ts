@@ -2,10 +2,14 @@ import { GalaxyName } from "../../../../domain/aggregates/Galaxy";
 import { Uuid } from "../../../../domain/aggregates/User";
 import { ChangeGalaxyNameDTO } from "../../../../presentation/security/galaxies/ChangeGalaxyName.dto";
 import { ErrorFactory } from "../../../../utils/errors/Error.map";
+import { GalaxyCacheService } from "../../../app-services/galaxies/GalaxyCache.service";
 import { IGalaxy } from "../../../interfaces/Galaxy.port";
 
 export class ChangeGalaxyName {
-  constructor(private readonly galaxyRepo: IGalaxy) {}
+  constructor(
+    private readonly galaxyRepo: IGalaxy,
+    private readonly galaxyCache: GalaxyCacheService,
+  ) {}
 
   async execute(id: Uuid, dto: ChangeGalaxyNameDTO): Promise<void> {
     const galaxy = await this.galaxyRepo.findById(id);
@@ -25,7 +29,9 @@ export class ChangeGalaxyName {
       });
     }
 
+    const previous = { name: galaxy.name };
     galaxy.rename(dto.name);
     await this.galaxyRepo.save(galaxy);
+    await this.galaxyCache.invalidateForMutation(galaxy, previous);
   }
 }

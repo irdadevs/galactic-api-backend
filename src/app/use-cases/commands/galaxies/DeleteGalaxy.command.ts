@@ -1,5 +1,6 @@
 import { Uuid } from "../../../../domain/aggregates/User";
 import { UnitOfWorkFactory } from "../../../../config/db/UnitOfWork";
+import { GalaxyCacheService } from "../../../app-services/galaxies/GalaxyCache.service";
 import {
   GalaxyLifecycleService,
   ProceduralRepoFactories,
@@ -10,6 +11,7 @@ export class DeleteGalaxy {
     private readonly uowFactory: UnitOfWorkFactory,
     private readonly repoFactories: ProceduralRepoFactories,
     private readonly lifecycle: GalaxyLifecycleService,
+    private readonly galaxyCache: GalaxyCacheService,
   ) {}
 
   async execute(id: Uuid): Promise<void> {
@@ -23,9 +25,17 @@ export class DeleteGalaxy {
         moon: this.repoFactories.moon(uow.db),
         asteroid: this.repoFactories.asteroid(uow.db),
       };
+      const existing = await repos.galaxy.findById(id);
 
       await this.lifecycle.deleteGalaxyTree(id, repos);
       await uow.commit();
+      if (existing) {
+        await this.galaxyCache.invalidateForDelete({
+          id: existing.id,
+          ownerId: existing.ownerId,
+          name: existing.name,
+        });
+      }
     } catch (error) {
       await uow.rollback();
       throw error;
