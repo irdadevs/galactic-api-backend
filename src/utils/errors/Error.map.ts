@@ -266,6 +266,11 @@ export const ErrorMap = {
     httpCode: 400,
     public: true,
   },
+  GALAXY_NAME_ALREADY_EXIST: {
+    code: "GALAXY.NAME_ALREADY_EXIST",
+    httpCode: 400,
+    public: true,
+  },
 } as const satisfies Record<string, ErrorDef>;
 
 export type SharedError = (typeof ErrorMap)[keyof typeof ErrorMap];
@@ -296,8 +301,7 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorMap.SESSION_INVALID.code]: "Invalid session.",
   [ErrorMap.EMAIL_NOT_VERIFIED.code]:
     "Email is not verified. Complete verification first.",
-  [ErrorMap.INVALID_VERIFICATION_CODE.code]:
-    "Invalid verification code.",
+  [ErrorMap.INVALID_VERIFICATION_CODE.code]: "Invalid verification code.",
   [ErrorMap.VERIFICATION_CODE_EXPIRED.code]:
     "Verification code expired. Request a new code.",
   [ErrorMap.SESSION_EXPIRED.code]: "Expired session.",
@@ -352,6 +356,8 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorMap.INVALID_MOON_ORBITAL.code]:
     "Invalid moon orbital. Orbital: ${orbital}.",
   [ErrorMap.INVALID_MOON_VALUE.code]: "Invalid moon value. Field: ${field}.",
+  [ErrorMap.GALAXY_NAME_ALREADY_EXIST.code]:
+    "Galaxy name already exist. Name: ${name}.",
 };
 
 export const ErrorFactory = createErrorFactory(ErrorMap, ErrorMessages);

@@ -6,7 +6,7 @@ CREATE SCHEMA IF NOT EXISTS procedurals;
 CREATE TABLE IF NOT EXISTS procedurals.galaxies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
   owner_id uuid NOT NULL REFERENCES auth.users (id),
-  name non_empty_text NOT NULL CHECK (name ~ '^[[:alnum:]-]{5,15}$'),
+  name non_empty_text UNIQUE NOT NULL CHECK (name ~ '^[[:alnum:]-]{5,15}$'),
   shape procedurals.galaxy_shapes NOT NULL,
   system_count integer NOT NULL CHECK (system_count >= 1 AND system_count <= 1000),
   created_at timestamptz NOT NULL DEFAULT now_utc (),
