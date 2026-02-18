@@ -1,15 +1,27 @@
 import { Asteroid, AsteroidName } from "../../../../domain/aggregates/Asteroid";
 import { Uuid } from "../../../../domain/aggregates/User";
+import { AsteroidCacheService } from "../../../app-services/asteroids/AsteroidCache.service";
 import { IAsteroid } from "../../../interfaces/Asteroid.port";
 
 export class FindAsteroid {
-  constructor(private readonly asteroidRepo: IAsteroid) {}
+  constructor(
+    private readonly asteroidRepo: IAsteroid,
+    private readonly asteroidCache: AsteroidCacheService,
+  ) {}
 
-  byId(id: Uuid): Promise<Asteroid | null> {
-    return this.asteroidRepo.findById(id);
+  async byId(id: Uuid): Promise<Asteroid | null> {
+    const cached = await this.asteroidCache.getById(id.toString());
+    if (cached) return cached;
+    const asteroid = await this.asteroidRepo.findById(id);
+    if (asteroid) await this.asteroidCache.setAsteroid(asteroid);
+    return asteroid;
   }
 
-  byName(name: AsteroidName): Promise<Asteroid | null> {
-    return this.asteroidRepo.findByName(name);
+  async byName(name: AsteroidName): Promise<Asteroid | null> {
+    const cached = await this.asteroidCache.getByName(name.toString());
+    if (cached) return cached;
+    const asteroid = await this.asteroidRepo.findByName(name);
+    if (asteroid) await this.asteroidCache.setAsteroid(asteroid);
+    return asteroid;
   }
 }

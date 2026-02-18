@@ -39,6 +39,10 @@ import { LifecycleService } from "./app/app-services/users/Lifecycle.service";
 import { UserCacheService } from "./app/app-services/users/UserCache.service";
 import { GalaxyCacheService } from "./app/app-services/galaxies/GalaxyCache.service";
 import { SystemCacheService } from "./app/app-services/systems/SystemCache.service";
+import { StarCacheService } from "./app/app-services/stars/StarCache.service";
+import { PlanetCacheService } from "./app/app-services/planets/PlanetCache.service";
+import { MoonCacheService } from "./app/app-services/moons/MoonCache.service";
+import { AsteroidCacheService } from "./app/app-services/asteroids/AsteroidCache.service";
 import { UserController } from "./presentation/controllers/User.controller";
 import { GalaxyController } from "./presentation/controllers/Galaxy.controller";
 import { SystemController } from "./presentation/controllers/System.controller";
@@ -168,6 +172,10 @@ async function start(): Promise<void> {
     const userCache = new UserCacheService(cache);
     const galaxyCache = new GalaxyCacheService(cache);
     const systemCache = new SystemCacheService(cache);
+    const starCache = new StarCacheService(cache);
+    const planetCache = new PlanetCacheService(cache);
+    const moonCache = new MoonCacheService(cache);
+    const asteroidCache = new AsteroidCacheService(cache);
     //! App layer
     // Use-cases
     const healthCheck = new HealthQuery();
@@ -263,28 +271,104 @@ async function start(): Promise<void> {
       systemCache,
       galaxyCache,
     );
-    const findStar = new FindStar(starRepo);
-    const listStarsBySystem = new ListStarsBySystem(starRepo);
-    const changeStarName = new ChangeStarName(starRepo);
-    const changeStarMain = new ChangeStarMain(starRepo);
-    const changeStarOrbital = new ChangeStarOrbital(starRepo);
-    const changeStarStarterOrbital = new ChangeStarStarterOrbital(starRepo);
-    const findPlanet = new FindPlanet(planetRepo);
-    const listPlanetsBySystem = new ListPlanetsBySystem(planetRepo);
-    const changePlanetName = new ChangePlanetName(planetRepo);
-    const changePlanetOrbital = new ChangePlanetOrbital(planetRepo);
-    const changePlanetBiome = new ChangePlanetBiome(planetRepo);
-    const findMoon = new FindMoon(moonRepo);
-    const listMoonsByPlanet = new ListMoonsByPlanet(moonRepo);
-    const changeMoonName = new ChangeMoonName(moonRepo);
-    const changeMoonSize = new ChangeMoonSize(moonRepo);
-    const changeMoonOrbital = new ChangeMoonOrbital(moonRepo);
-    const findAsteroid = new FindAsteroid(asteroidRepo);
-    const listAsteroidsBySystem = new ListAsteroidsBySystem(asteroidRepo);
-    const changeAsteroidName = new ChangeAsteroidName(asteroidRepo);
-    const changeAsteroidType = new ChangeAsteroidType(asteroidRepo);
-    const changeAsteroidSize = new ChangeAsteroidSize(asteroidRepo);
-    const changeAsteroidOrbital = new ChangeAsteroidOrbital(asteroidRepo);
+    const findStar = new FindStar(starRepo, starCache);
+    const listStarsBySystem = new ListStarsBySystem(starRepo, starCache);
+    const changeStarName = new ChangeStarName(
+      starRepo,
+      systemRepo,
+      starCache,
+      galaxyCache,
+    );
+    const changeStarMain = new ChangeStarMain(
+      starRepo,
+      systemRepo,
+      starCache,
+      galaxyCache,
+    );
+    const changeStarOrbital = new ChangeStarOrbital(
+      starRepo,
+      systemRepo,
+      starCache,
+      galaxyCache,
+    );
+    const changeStarStarterOrbital = new ChangeStarStarterOrbital(
+      starRepo,
+      systemRepo,
+      starCache,
+      galaxyCache,
+    );
+    const findPlanet = new FindPlanet(planetRepo, planetCache);
+    const listPlanetsBySystem = new ListPlanetsBySystem(planetRepo, planetCache);
+    const changePlanetName = new ChangePlanetName(
+      planetRepo,
+      systemRepo,
+      planetCache,
+      galaxyCache,
+    );
+    const changePlanetOrbital = new ChangePlanetOrbital(
+      planetRepo,
+      systemRepo,
+      planetCache,
+      galaxyCache,
+    );
+    const changePlanetBiome = new ChangePlanetBiome(
+      planetRepo,
+      systemRepo,
+      planetCache,
+      galaxyCache,
+    );
+    const findMoon = new FindMoon(moonRepo, moonCache);
+    const listMoonsByPlanet = new ListMoonsByPlanet(moonRepo, moonCache);
+    const changeMoonName = new ChangeMoonName(
+      moonRepo,
+      planetRepo,
+      systemRepo,
+      moonCache,
+      galaxyCache,
+    );
+    const changeMoonSize = new ChangeMoonSize(
+      moonRepo,
+      planetRepo,
+      systemRepo,
+      moonCache,
+      galaxyCache,
+    );
+    const changeMoonOrbital = new ChangeMoonOrbital(
+      moonRepo,
+      planetRepo,
+      systemRepo,
+      moonCache,
+      galaxyCache,
+    );
+    const findAsteroid = new FindAsteroid(asteroidRepo, asteroidCache);
+    const listAsteroidsBySystem = new ListAsteroidsBySystem(
+      asteroidRepo,
+      asteroidCache,
+    );
+    const changeAsteroidName = new ChangeAsteroidName(
+      asteroidRepo,
+      systemRepo,
+      asteroidCache,
+      galaxyCache,
+    );
+    const changeAsteroidType = new ChangeAsteroidType(
+      asteroidRepo,
+      systemRepo,
+      asteroidCache,
+      galaxyCache,
+    );
+    const changeAsteroidSize = new ChangeAsteroidSize(
+      asteroidRepo,
+      systemRepo,
+      asteroidCache,
+      galaxyCache,
+    );
+    const changeAsteroidOrbital = new ChangeAsteroidOrbital(
+      asteroidRepo,
+      systemRepo,
+      asteroidCache,
+      galaxyCache,
+    );
     // App-services
     const authService = new AuthService(
       loginUser,

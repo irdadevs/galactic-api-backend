@@ -1,10 +1,18 @@
 import { Uuid } from "../../../../domain/aggregates/User";
 import { ChangeStarMainDTO } from "../../../../presentation/security/stars/ChangeStarMain.dto";
 import { ErrorFactory } from "../../../../utils/errors/Error.map";
+import { GalaxyCacheService } from "../../../app-services/galaxies/GalaxyCache.service";
+import { StarCacheService } from "../../../app-services/stars/StarCache.service";
+import { ISystem } from "../../../interfaces/System.port";
 import { IStar } from "../../../interfaces/Star.port";
 
 export class ChangeStarMain {
-  constructor(private readonly starRepo: IStar) {}
+  constructor(
+    private readonly starRepo: IStar,
+    private readonly systemRepo: ISystem,
+    private readonly starCache: StarCacheService,
+    private readonly galaxyCache: GalaxyCacheService,
+  ) {}
 
   async execute(id: Uuid, dto: ChangeStarMainDTO): Promise<void> {
     const star = await this.starRepo.findById(id);
@@ -15,7 +23,13 @@ export class ChangeStarMain {
       });
     }
 
+    const previous = { name: star.name, systemId: star.systemId };
     star.changeMainStatus(dto.isMain);
     await this.starRepo.save(star);
+    await this.starCache.invalidateForMutation(star, previous);
+    const system = await this.systemRepo.findById(Uuid.create(star.systemId));
+    if (system) {
+      await this.galaxyCache.invalidatePopulate(system.galaxyId);
+    }
   }
 }
