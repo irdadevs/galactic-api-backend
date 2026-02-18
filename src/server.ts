@@ -42,6 +42,10 @@ import { SystemCacheService } from "./app/app-services/systems/SystemCache.servi
 import { UserController } from "./presentation/controllers/User.controller";
 import { GalaxyController } from "./presentation/controllers/Galaxy.controller";
 import { SystemController } from "./presentation/controllers/System.controller";
+import { StarController } from "./presentation/controllers/Star.controller";
+import { PlanetController } from "./presentation/controllers/Planet.controller";
+import { MoonController } from "./presentation/controllers/Moon.controller";
+import { AsteroidController } from "./presentation/controllers/Asteroid.controller";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
 import { MailerRepo } from "./infra/repos/Mailer.repository";
@@ -63,6 +67,28 @@ import { FindSystem } from "./app/use-cases/queries/systems/FindSystem.query";
 import { ListSystemsByGalaxy } from "./app/use-cases/queries/systems/ListSystemsByGalaxy.query";
 import { ChangeSystemName } from "./app/use-cases/commands/systems/ChangeSystemName.command";
 import { ChangeSystemPosition } from "./app/use-cases/commands/systems/ChangeSystemPosition.command";
+import { FindStar } from "./app/use-cases/queries/stars/FindStar.query";
+import { ListStarsBySystem } from "./app/use-cases/queries/stars/ListStarsBySystem.query";
+import { ChangeStarName } from "./app/use-cases/commands/stars/ChangeStarName.command";
+import { ChangeStarMain } from "./app/use-cases/commands/stars/ChangeStarMain.command";
+import { ChangeStarOrbital } from "./app/use-cases/commands/stars/ChangeStarOrbital.command";
+import { ChangeStarStarterOrbital } from "./app/use-cases/commands/stars/ChangeStarStarterOrbital.command";
+import { FindPlanet } from "./app/use-cases/queries/planets/FindPlanet.query";
+import { ListPlanetsBySystem } from "./app/use-cases/queries/planets/ListPlanetsBySystem.query";
+import { ChangePlanetName } from "./app/use-cases/commands/planets/ChangePlanetName.command";
+import { ChangePlanetOrbital } from "./app/use-cases/commands/planets/ChangePlanetOrbital.command";
+import { ChangePlanetBiome } from "./app/use-cases/commands/planets/ChangePlanetBiome.command";
+import { FindMoon } from "./app/use-cases/queries/moons/FindMoon.query";
+import { ListMoonsByPlanet } from "./app/use-cases/queries/moons/ListMoonsByPlanet.query";
+import { ChangeMoonName } from "./app/use-cases/commands/moons/ChangeMoonName.command";
+import { ChangeMoonSize } from "./app/use-cases/commands/moons/ChangeMoonSize.command";
+import { ChangeMoonOrbital } from "./app/use-cases/commands/moons/ChangeMoonOrbital.command";
+import { FindAsteroid } from "./app/use-cases/queries/asteroids/FindAsteroid.query";
+import { ListAsteroidsBySystem } from "./app/use-cases/queries/asteroids/ListAsteroidsBySystem.query";
+import { ChangeAsteroidName } from "./app/use-cases/commands/asteroids/ChangeAsteroidName.command";
+import { ChangeAsteroidType } from "./app/use-cases/commands/asteroids/ChangeAsteroidType.command";
+import { ChangeAsteroidSize } from "./app/use-cases/commands/asteroids/ChangeAsteroidSize.command";
+import { ChangeAsteroidOrbital } from "./app/use-cases/commands/asteroids/ChangeAsteroidOrbital.command";
 
 // --------------------
 // Server config
@@ -237,6 +263,28 @@ async function start(): Promise<void> {
       systemCache,
       galaxyCache,
     );
+    const findStar = new FindStar(starRepo);
+    const listStarsBySystem = new ListStarsBySystem(starRepo);
+    const changeStarName = new ChangeStarName(starRepo);
+    const changeStarMain = new ChangeStarMain(starRepo);
+    const changeStarOrbital = new ChangeStarOrbital(starRepo);
+    const changeStarStarterOrbital = new ChangeStarStarterOrbital(starRepo);
+    const findPlanet = new FindPlanet(planetRepo);
+    const listPlanetsBySystem = new ListPlanetsBySystem(planetRepo);
+    const changePlanetName = new ChangePlanetName(planetRepo);
+    const changePlanetOrbital = new ChangePlanetOrbital(planetRepo);
+    const changePlanetBiome = new ChangePlanetBiome(planetRepo);
+    const findMoon = new FindMoon(moonRepo);
+    const listMoonsByPlanet = new ListMoonsByPlanet(moonRepo);
+    const changeMoonName = new ChangeMoonName(moonRepo);
+    const changeMoonSize = new ChangeMoonSize(moonRepo);
+    const changeMoonOrbital = new ChangeMoonOrbital(moonRepo);
+    const findAsteroid = new FindAsteroid(asteroidRepo);
+    const listAsteroidsBySystem = new ListAsteroidsBySystem(asteroidRepo);
+    const changeAsteroidName = new ChangeAsteroidName(asteroidRepo);
+    const changeAsteroidType = new ChangeAsteroidType(asteroidRepo);
+    const changeAsteroidSize = new ChangeAsteroidSize(asteroidRepo);
+    const changeAsteroidOrbital = new ChangeAsteroidOrbital(asteroidRepo);
     // App-services
     const authService = new AuthService(
       loginUser,
@@ -283,6 +331,45 @@ async function start(): Promise<void> {
       changeSystemPosition,
       findGalaxy,
     );
+    const starController = new StarController(
+      findStar,
+      listStarsBySystem,
+      changeStarName,
+      changeStarMain,
+      changeStarOrbital,
+      changeStarStarterOrbital,
+      findSystem,
+      findGalaxy,
+    );
+    const planetController = new PlanetController(
+      findPlanet,
+      listPlanetsBySystem,
+      changePlanetName,
+      changePlanetOrbital,
+      changePlanetBiome,
+      findSystem,
+      findGalaxy,
+    );
+    const moonController = new MoonController(
+      findMoon,
+      listMoonsByPlanet,
+      changeMoonName,
+      changeMoonSize,
+      changeMoonOrbital,
+      findPlanet,
+      findSystem,
+      findGalaxy,
+    );
+    const asteroidController = new AsteroidController(
+      findAsteroid,
+      listAsteroidsBySystem,
+      changeAsteroidName,
+      changeAsteroidType,
+      changeAsteroidSize,
+      changeAsteroidOrbital,
+      findSystem,
+      findGalaxy,
+    );
     // Middlewares
     const authMiddleware = new AuthMiddleware(jwtService, {
       issuer: process.env.JWT_ISSUER!,
@@ -295,6 +382,10 @@ async function start(): Promise<void> {
         userController,
         galaxyController,
         systemController,
+        starController,
+        planetController,
+        moonController,
+        asteroidController,
         auth: authMiddleware,
         scope: scopeMiddleware,
       }),

@@ -3,9 +3,17 @@ import { API_VERSION } from "../../utils/constants";
 import { UserController } from "../controllers/User.controller";
 import { GalaxyController } from "../controllers/Galaxy.controller";
 import { SystemController } from "../controllers/System.controller";
+import { StarController } from "../controllers/Star.controller";
+import { PlanetController } from "../controllers/Planet.controller";
+import { MoonController } from "../controllers/Moon.controller";
+import { AsteroidController } from "../controllers/Asteroid.controller";
 import { UserRoutes } from "./User.routes";
 import { GalaxyRoutes } from "./Galaxy.routes";
 import { SystemRoutes } from "./System.routes";
+import { StarRoutes } from "./Star.routes";
+import { PlanetRoutes } from "./Planet.routes";
+import { MoonRoutes } from "./Moon.routes";
+import { AsteroidRoutes } from "./Asteroid.routes";
 import { AuthMiddleware } from "../middlewares/Auth.middleware";
 import { ScopeMiddleware } from "../middlewares/Scope.middleware.ts";
 
@@ -40,6 +48,10 @@ export function buildApiRouter(deps: {
   userController: UserController;
   galaxyController: GalaxyController;
   systemController: SystemController;
+  starController: StarController;
+  planetController: PlanetController;
+  moonController: MoonController;
+  asteroidController: AsteroidController;
   auth: AuthMiddleware;
   scope: ScopeMiddleware;
 }): Router {
@@ -62,10 +74,26 @@ export function buildApiRouter(deps: {
     `${base}/systems`,
     SystemRoutes(deps.systemController, deps.auth, deps.scope),
   );
-  registerRoutes(router, `${base}/star`, []);
-  registerRoutes(router, `${base}/planet`, []);
-  registerRoutes(router, `${base}/moon`, []);
-  registerRoutes(router, `${base}/asteroid`, []);
+  registerRoutes(
+    router,
+    `${base}/stars`,
+    StarRoutes(deps.starController, deps.auth, deps.scope),
+  );
+  registerRoutes(
+    router,
+    `${base}/planets`,
+    PlanetRoutes(deps.planetController, deps.auth, deps.scope),
+  );
+  registerRoutes(
+    router,
+    `${base}/moons`,
+    MoonRoutes(deps.moonController, deps.auth, deps.scope),
+  );
+  registerRoutes(
+    router,
+    `${base}/asteroids`,
+    AsteroidRoutes(deps.asteroidController, deps.auth, deps.scope),
+  );
 
   return router;
 }
