@@ -2,8 +2,10 @@ import { RequestHandler, Router } from "express";
 import { API_VERSION } from "../../utils/constants";
 import { UserController } from "../controllers/User.controller";
 import { GalaxyController } from "../controllers/Galaxy.controller";
+import { SystemController } from "../controllers/System.controller";
 import { UserRoutes } from "./User.routes";
 import { GalaxyRoutes } from "./Galaxy.routes";
+import { SystemRoutes } from "./System.routes";
 import { AuthMiddleware } from "../middlewares/Auth.middleware";
 import { ScopeMiddleware } from "../middlewares/Scope.middleware.ts";
 
@@ -37,6 +39,7 @@ function registerRoutes(
 export function buildApiRouter(deps: {
   userController: UserController;
   galaxyController: GalaxyController;
+  systemController: SystemController;
   auth: AuthMiddleware;
   scope: ScopeMiddleware;
 }): Router {
@@ -54,7 +57,11 @@ export function buildApiRouter(deps: {
     `${base}/galaxies`,
     GalaxyRoutes(deps.galaxyController, deps.auth, deps.scope),
   );
-  registerRoutes(router, `${base}/system`, []);
+  registerRoutes(
+    router,
+    `${base}/systems`,
+    SystemRoutes(deps.systemController, deps.auth, deps.scope),
+  );
   registerRoutes(router, `${base}/star`, []);
   registerRoutes(router, `${base}/planet`, []);
   registerRoutes(router, `${base}/moon`, []);

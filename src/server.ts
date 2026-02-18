@@ -40,6 +40,7 @@ import { UserCacheService } from "./app/app-services/users/UserCache.service";
 import { GalaxyCacheService } from "./app/app-services/galaxies/GalaxyCache.service";
 import { UserController } from "./presentation/controllers/User.controller";
 import { GalaxyController } from "./presentation/controllers/Galaxy.controller";
+import { SystemController } from "./presentation/controllers/System.controller";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
 import { MailerRepo } from "./infra/repos/Mailer.repository";
@@ -57,6 +58,10 @@ import { GalaxyLifecycleService } from "./app/app-services/galaxies/GalaxyLifecy
 import { FindGalaxy } from "./app/use-cases/queries/galaxies/FindGalaxy.query";
 import { ListGalaxies } from "./app/use-cases/queries/galaxies/ListGalaxies.query";
 import { PopulateGalaxy } from "./app/use-cases/queries/galaxies/PopulateGalaxy.query";
+import { FindSystem } from "./app/use-cases/queries/systems/FindSystem.query";
+import { ListSystemsByGalaxy } from "./app/use-cases/queries/systems/ListSystemsByGalaxy.query";
+import { ChangeSystemName } from "./app/use-cases/commands/systems/ChangeSystemName.command";
+import { ChangeSystemPosition } from "./app/use-cases/commands/systems/ChangeSystemPosition.command";
 
 // --------------------
 // Server config
@@ -203,6 +208,10 @@ async function start(): Promise<void> {
       asteroidRepo,
       galaxyCache,
     );
+    const findSystem = new FindSystem(systemRepo);
+    const listSystemsByGalaxy = new ListSystemsByGalaxy(systemRepo);
+    const changeSystemName = new ChangeSystemName(systemRepo);
+    const changeSystemPosition = new ChangeSystemPosition(systemRepo);
     // App-services
     const authService = new AuthService(
       loginUser,
@@ -242,6 +251,13 @@ async function start(): Promise<void> {
       listGalaxies,
       populateGalaxy,
     );
+    const systemController = new SystemController(
+      findSystem,
+      listSystemsByGalaxy,
+      changeSystemName,
+      changeSystemPosition,
+      findGalaxy,
+    );
     // Middlewares
     const authMiddleware = new AuthMiddleware(jwtService, {
       issuer: process.env.JWT_ISSUER!,
@@ -253,6 +269,7 @@ async function start(): Promise<void> {
       buildApiRouter({
         userController,
         galaxyController,
+        systemController,
         auth: authMiddleware,
         scope: scopeMiddleware,
       }),
