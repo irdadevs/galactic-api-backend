@@ -177,4 +177,12 @@ export class GalaxyCacheService {
       return;
     }
   }
+
+  async invalidatePopulate(galaxyId: string): Promise<void> {
+    try {
+      await this.cache.del(GalaxyCacheKeys.populate(galaxyId));
+    } catch {
+      return;
+    }
+  }
 }

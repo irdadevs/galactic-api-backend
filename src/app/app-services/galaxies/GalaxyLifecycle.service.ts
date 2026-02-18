@@ -164,7 +164,8 @@ export class GalaxyLifecycleService {
   async createGalaxyTree(
     galaxy: Galaxy,
     repos: ProceduralRepos,
-  ): Promise<void> {
+  ): Promise<System[]> {
+    const createdSystems: System[] = [];
     await repos.galaxy.save(galaxy);
 
     for (let i = 0; i < galaxy.systemCount; i += 1) {
@@ -178,6 +179,7 @@ export class GalaxyLifecycleService {
         ),
       });
       await repos.system.save(system);
+      createdSystems.push(system);
 
       const stars = this.generateSystemStars(system.id);
       for (const star of stars) {
@@ -223,12 +225,31 @@ export class GalaxyLifecycleService {
         await repos.asteroid.save(asteroid);
       }
     }
+
+    return createdSystems;
+  }
+
+  async recalculateSystemPositionsForShape(
+    galaxy: Galaxy,
+    systemRepo: ISystem,
+  ): Promise<System[]> {
+    const systems = await systemRepo.findByGalaxy(Uuid.create(galaxy.id));
+    const updated: System[] = [];
+
+    for (let i = 0; i < systems.rows.length; i += 1) {
+      const system = systems.rows[i];
+      system.move(this.randomSystemPosition(galaxy.shape, i, systems.rows.length));
+      await systemRepo.save(system);
+      updated.push(system);
+    }
+
+    return updated;
   }
 
   async deleteGalaxyTree(
     galaxyId: Uuid,
     repos: ProceduralRepos,
-  ): Promise<void> {
+  ): Promise<System[]> {
     const systems = await repos.system.findByGalaxy(galaxyId);
 
     for (const system of systems.rows) {
@@ -258,5 +279,6 @@ export class GalaxyLifecycleService {
     }
 
     await repos.galaxy.delete(galaxyId);
+    return systems.rows;
   }
 }

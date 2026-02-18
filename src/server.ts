@@ -38,6 +38,7 @@ import { PlatformService } from "./app/app-services/users/Platform.service";
 import { LifecycleService } from "./app/app-services/users/Lifecycle.service";
 import { UserCacheService } from "./app/app-services/users/UserCache.service";
 import { GalaxyCacheService } from "./app/app-services/galaxies/GalaxyCache.service";
+import { SystemCacheService } from "./app/app-services/systems/SystemCache.service";
 import { UserController } from "./presentation/controllers/User.controller";
 import { GalaxyController } from "./presentation/controllers/Galaxy.controller";
 import { SystemController } from "./presentation/controllers/System.controller";
@@ -140,6 +141,7 @@ async function start(): Promise<void> {
     const jwtService = new JwtService();
     const userCache = new UserCacheService(cache);
     const galaxyCache = new GalaxyCacheService(cache);
+    const systemCache = new SystemCacheService(cache);
     //! App layer
     // Use-cases
     const healthCheck = new HealthQuery();
@@ -181,9 +183,23 @@ async function start(): Promise<void> {
       },
       galaxyLifecycle,
       galaxyCache,
+      systemCache,
     );
     const changeGalaxyName = new ChangeGalaxyName(galaxyRepo, galaxyCache);
-    const changeGalaxyShape = new ChangeGalaxyShape(galaxyRepo, galaxyCache);
+    const changeGalaxyShape = new ChangeGalaxyShape(
+      uowFactory,
+      {
+        galaxy: (db) => new GalaxyRepo(db),
+        system: (db) => new SystemRepo(db),
+        star: (db) => new StarRepo(db),
+        planet: (db) => new PlanetRepo(db),
+        moon: (db) => new MoonRepo(db),
+        asteroid: (db) => new AsteroidRepo(db),
+      },
+      galaxyLifecycle,
+      galaxyCache,
+      systemCache,
+    );
     const deleteGalaxy = new DeleteGalaxy(
       uowFactory,
       {
@@ -196,6 +212,7 @@ async function start(): Promise<void> {
       },
       galaxyLifecycle,
       galaxyCache,
+      systemCache,
     );
     const findGalaxy = new FindGalaxy(galaxyRepo, galaxyCache);
     const listGalaxies = new ListGalaxies(galaxyRepo, galaxyCache);
@@ -208,10 +225,18 @@ async function start(): Promise<void> {
       asteroidRepo,
       galaxyCache,
     );
-    const findSystem = new FindSystem(systemRepo);
-    const listSystemsByGalaxy = new ListSystemsByGalaxy(systemRepo);
-    const changeSystemName = new ChangeSystemName(systemRepo);
-    const changeSystemPosition = new ChangeSystemPosition(systemRepo);
+    const findSystem = new FindSystem(systemRepo, systemCache);
+    const listSystemsByGalaxy = new ListSystemsByGalaxy(systemRepo, systemCache);
+    const changeSystemName = new ChangeSystemName(
+      systemRepo,
+      systemCache,
+      galaxyCache,
+    );
+    const changeSystemPosition = new ChangeSystemPosition(
+      systemRepo,
+      systemCache,
+      galaxyCache,
+    );
     // App-services
     const authService = new AuthService(
       loginUser,
