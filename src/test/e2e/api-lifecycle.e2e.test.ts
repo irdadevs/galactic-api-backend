@@ -1,0 +1,196 @@
+import request from "supertest";
+import { buildTestApi, IDS, makeAuthHeader } from "../helpers/apiTestApp";
+
+describe("API E2E - auth, ownership and validation boundaries", () => {
+  test("rejects protected endpoints when Authorization header is missing", async () => {
+    const { app } = buildTestApi();
+    await request(app).get("/api/v1/galaxies").expect(401);
+  });
+
+  test("rejects invalid bearer token payload", async () => {
+    const { app } = buildTestApi();
+    await request(app)
+      .get("/api/v1/galaxies")
+      .set("Authorization", "Bearer malformed-token")
+      .expect(401);
+  });
+
+  test("allows any authenticated user to create galaxies and injects ownerId from auth context", async () => {
+    const { app, mocks } = buildTestApi();
+
+    const response = await request(app)
+      .post("/api/v1/galaxies")
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ name: "NewGalaxy", shape: "spherical", systemCount: 3 })
+      .expect(201);
+
+    expect(mocks.createGalaxy.execute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ownerId: IDS.userA,
+        name: "NewGalaxy",
+        systemCount: 3,
+      }),
+    );
+    expect(response.body.ownerId).toBe(IDS.userA);
+  });
+
+  test("returns only own galaxy for non-admin list route", async () => {
+    const { app, mocks } = buildTestApi();
+    const response = await request(app)
+      .get("/api/v1/galaxies")
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .expect(200);
+
+    expect(mocks.findGalaxy.byOwner).toHaveBeenCalled();
+    expect(mocks.listGalaxies.execute).not.toHaveBeenCalled();
+    expect(response.body.total).toBe(1);
+    expect(response.body.rows[0].ownerId).toBe(IDS.userA);
+  });
+
+  test("allows admin to list all galaxies", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .get("/api/v1/galaxies?page=1&limit=20")
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .expect(200);
+
+    expect(mocks.listGalaxies.execute).toHaveBeenCalled();
+  });
+
+  test("forbids non-admin access to other user galaxy by id", async () => {
+    const { app } = buildTestApi();
+    await request(app)
+      .get(`/api/v1/galaxies/${IDS.galaxyB}`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .expect(403);
+  });
+
+  test("allows admin access to any galaxy by id", async () => {
+    const { app } = buildTestApi();
+    const response = await request(app)
+      .get(`/api/v1/galaxies/${IDS.galaxyB}`)
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .expect(200);
+    expect(response.body.id).toBe(IDS.galaxyB);
+  });
+
+  test("validates galaxy shape patch payload", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/galaxies/${IDS.galaxyA}/shape`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ shape: "unknown-shape" })
+      .expect(400);
+    expect(mocks.changeGalaxyShape.execute).not.toHaveBeenCalled();
+  });
+
+  test("forbids non-owner from mutating systems", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/systems/${IDS.systemB}/name`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ name: "ForbiddenSystem" })
+      .expect(403);
+    expect(mocks.changeSystemName.execute).not.toHaveBeenCalled();
+  });
+
+  test("validates system position payload", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/systems/${IDS.systemA}/position`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ x: "10", y: 20, z: 30 })
+      .expect(400);
+    expect(mocks.changeSystemPosition.execute).not.toHaveBeenCalled();
+  });
+
+  test("forbids non-owner from mutating stars", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/stars/${IDS.starB}/main`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ isMain: true })
+      .expect(403);
+    expect(mocks.changeStarMain.execute).not.toHaveBeenCalled();
+  });
+
+  test("validates star orbital payload", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/stars/${IDS.starA}/orbital`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ orbital: -1 })
+      .expect(400);
+    expect(mocks.changeStarOrbital.execute).not.toHaveBeenCalled();
+  });
+
+  test("allows admin to mutate any star", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/stars/${IDS.starB}/main`)
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .send({ isMain: false })
+      .expect(204);
+    expect(mocks.changeStarMain.execute).toHaveBeenCalled();
+  });
+
+  test("forbids non-owner from mutating planets", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/planets/${IDS.planetB}/biome`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ biome: "desert" })
+      .expect(403);
+    expect(mocks.changePlanetBiome.execute).not.toHaveBeenCalled();
+  });
+
+  test("validates planet orbital payload", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/planets/${IDS.planetA}/orbital`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ orbital: 0 })
+      .expect(400);
+    expect(mocks.changePlanetOrbital.execute).not.toHaveBeenCalled();
+  });
+
+  test("forbids non-owner from mutating moons", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/moons/${IDS.moonB}/size`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ size: "medium" })
+      .expect(403);
+    expect(mocks.changeMoonSize.execute).not.toHaveBeenCalled();
+  });
+
+  test("validates moon orbital payload", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/moons/${IDS.moonA}/orbital`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ orbital: 0 })
+      .expect(400);
+    expect(mocks.changeMoonOrbital.execute).not.toHaveBeenCalled();
+  });
+
+  test("forbids non-owner from mutating asteroids", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/asteroids/${IDS.asteroidB}/type`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ type: "single" })
+      .expect(403);
+    expect(mocks.changeAsteroidType.execute).not.toHaveBeenCalled();
+  });
+
+  test("validates asteroid size payload", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/asteroids/${IDS.asteroidA}/size`)
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ size: "colossal" })
+      .expect(400);
+    expect(mocks.changeAsteroidSize.execute).not.toHaveBeenCalled();
+  });
+});
