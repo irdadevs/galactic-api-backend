@@ -24,7 +24,7 @@ import errorHandler from "../../utils/errors/Errors.handler";
 import invalidBody from "../../utils/invalidBody";
 import { ListUsersDTO } from "../security/users/ListUsers.dto";
 import { Email, Username, Uuid } from "../../domain/aggregates/User";
-import { AUTH_COOKIE_NAMES, getCookie } from "../../utils/http/Cookies";
+import { AUTH_COOKIE_NAMES, getCookie } from "../../utils/Cookies";
 import { TOKEN_TIMES_MAP } from "../../utils/TokenTimes.map";
 
 export class UserController {
@@ -152,7 +152,10 @@ export class UserController {
         await this.authService.logout(parsed.data.sessionId);
       }
       res.clearCookie(AUTH_COOKIE_NAMES.accessToken, this.clearCookieOptions());
-      res.clearCookie(AUTH_COOKIE_NAMES.refreshToken, this.clearCookieOptions());
+      res.clearCookie(
+        AUTH_COOKIE_NAMES.refreshToken,
+        this.clearCookieOptions(),
+      );
 
       return res.status(204).send();
     } catch (err: unknown) {
@@ -164,7 +167,10 @@ export class UserController {
     try {
       await this.authService.logoutAll(req.auth.userId);
       res.clearCookie(AUTH_COOKIE_NAMES.accessToken, this.clearCookieOptions());
-      res.clearCookie(AUTH_COOKIE_NAMES.refreshToken, this.clearCookieOptions());
+      res.clearCookie(
+        AUTH_COOKIE_NAMES.refreshToken,
+        this.clearCookieOptions(),
+      );
 
       return res.status(204).send();
     } catch (err: unknown) {

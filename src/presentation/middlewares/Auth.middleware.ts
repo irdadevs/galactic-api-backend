@@ -3,7 +3,7 @@
 import { Request, Response, NextFunction } from "express";
 import { IJWT, JwtOpts } from "../../app/interfaces/Jwt.port";
 import { Uuid } from "../../domain/aggregates/User";
-import { AUTH_COOKIE_NAMES, getCookie } from "../../utils/http/Cookies";
+import { AUTH_COOKIE_NAMES, getCookie } from "../../utils/Cookies";
 
 export class AuthMiddleware {
   constructor(

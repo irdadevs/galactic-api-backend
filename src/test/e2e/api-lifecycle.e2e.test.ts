@@ -274,4 +274,28 @@ describe("API E2E - auth, ownership and validation boundaries", () => {
       .expect(204);
     expect(mocks.resolveLog.execute).toHaveBeenCalledWith("10", IDS.admin);
   });
+
+  test("allows only admin to access performance metrics dashboard", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .get("/api/v1/metrics/performance/dashboard")
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .expect(403);
+
+    await request(app)
+      .get("/api/v1/metrics/performance/dashboard?hours=24&topLimit=10")
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .expect(200);
+
+    expect(mocks.dashboardMetrics.execute).toHaveBeenCalled();
+  });
+
+  test("allows admin to list performance metrics", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .get("/api/v1/metrics/performance?limit=20")
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .expect(200);
+    expect(mocks.listMetrics.execute).toHaveBeenCalled();
+  });
 });

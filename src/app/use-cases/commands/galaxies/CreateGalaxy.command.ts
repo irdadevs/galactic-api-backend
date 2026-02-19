@@ -8,6 +8,7 @@ import {
   GalaxyLifecycleService,
   ProceduralRepoFactories,
 } from "../../../app-services/galaxies/GalaxyLifecycle.service";
+import { TrackMetric } from "../metrics/TrackMetric.command";
 
 export class CreateGalaxy {
   constructor(
@@ -16,9 +17,11 @@ export class CreateGalaxy {
     private readonly lifecycle: GalaxyLifecycleService,
     private readonly galaxyCache: GalaxyCacheService,
     private readonly systemCache: SystemCacheService,
+    private readonly metrics?: TrackMetric,
   ) {}
 
   async execute(dto: CreateGalaxyDTO & { ownerId: string }): Promise<Galaxy> {
+    const startedAt = Date.now();
     const uow = await this.uowFactory.start();
     try {
       const repos = {
@@ -55,9 +58,27 @@ export class CreateGalaxy {
         await this.systemCache.setSystem(system);
       }
       await this.systemCache.invalidateListByGalaxy(galaxy.id);
+      await this.metrics?.execute({
+        metricName: "use_case.galaxy.create",
+        metricType: "use_case",
+        source: "CreateGalaxy",
+        durationMs: Date.now() - startedAt,
+        success: true,
+        userId: dto.ownerId,
+        context: { systemCount: dto.systemCount, galaxyId: galaxy.id },
+      });
       return galaxy;
     } catch (error) {
       await uow.rollback();
+      await this.metrics?.execute({
+        metricName: "use_case.galaxy.create",
+        metricType: "use_case",
+        source: "CreateGalaxy",
+        durationMs: Date.now() - startedAt,
+        success: false,
+        userId: dto.ownerId,
+        context: { systemCount: dto.systemCount },
+      });
       throw error;
     }
   }

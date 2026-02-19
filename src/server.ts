@@ -52,6 +52,8 @@ import { MoonController } from "./presentation/controllers/Moon.controller";
 import { AsteroidController } from "./presentation/controllers/Asteroid.controller";
 import { LogController } from "./presentation/controllers/Log.controller";
 import { RequestAuditMiddleware } from "./presentation/middlewares/RequestAudit.middleware";
+import { MetricController } from "./presentation/controllers/Metric.controller";
+import { PerformanceMetricsMiddleware } from "./presentation/middlewares/PerformanceMetrics.middleware";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
 import { MailerRepo } from "./infra/repos/Mailer.repository";
@@ -101,6 +103,12 @@ import { CreateLog } from "./app/use-cases/commands/logs/CreateLog.command";
 import { ResolveLog } from "./app/use-cases/commands/logs/ResolveLog.command";
 import { FindLog } from "./app/use-cases/queries/logs/FindLog.query";
 import { ListLogs } from "./app/use-cases/queries/logs/ListLogs.query";
+import MetricRepo from "./infra/repos/Metric.repository";
+import { MetricCacheService } from "./app/app-services/metrics/MetricCache.service";
+import { TrackMetric } from "./app/use-cases/commands/metrics/TrackMetric.command";
+import { FindMetric } from "./app/use-cases/queries/metrics/FindMetric.query";
+import { ListMetrics } from "./app/use-cases/queries/metrics/ListMetrics.query";
+import { MetricsDashboardQuery } from "./app/use-cases/queries/metrics/MetricsDashboard.query";
 
 // --------------------
 // Server config
@@ -180,6 +188,7 @@ async function start(): Promise<void> {
     const moonRepo = new MoonRepo(postgres);
     const asteroidRepo = new AsteroidRepo(postgres);
     const logRepo = new LogRepo(postgres);
+    const metricRepo = new MetricRepo(postgres);
     const sessionRepo = new SessionRepo(postgres._getPool());
     const hasher = new HasherRepo();
     const mailer = new MailerRepo();
@@ -192,6 +201,7 @@ async function start(): Promise<void> {
     const moonCache = new MoonCacheService(cache);
     const asteroidCache = new AsteroidCacheService(cache);
     const logCache = new LogCacheService(cache);
+    const metricCache = new MetricCacheService(cache);
     //! App layer
     // Use-cases
     const healthCheck = new HealthQuery();
@@ -221,6 +231,10 @@ async function start(): Promise<void> {
     const logoutAllSessions = new LogoutAllSessions(sessionRepo);
     const findUser = new FindUser(userRepo, userCache);
     const galaxyLifecycle = new GalaxyLifecycleService();
+    const trackMetric = new TrackMetric(metricRepo, metricCache);
+    const findMetric = new FindMetric(metricRepo, metricCache);
+    const listMetrics = new ListMetrics(metricRepo, metricCache);
+    const metricsDashboard = new MetricsDashboardQuery(metricRepo, metricCache);
     const createGalaxy = new CreateGalaxy(
       uowFactory,
       {
@@ -234,6 +248,7 @@ async function start(): Promise<void> {
       galaxyLifecycle,
       galaxyCache,
       systemCache,
+      trackMetric,
     );
     const changeGalaxyName = new ChangeGalaxyName(galaxyRepo, galaxyCache);
     const changeGalaxyShape = new ChangeGalaxyShape(
@@ -249,6 +264,7 @@ async function start(): Promise<void> {
       galaxyLifecycle,
       galaxyCache,
       systemCache,
+      trackMetric,
     );
     const deleteGalaxy = new DeleteGalaxy(
       uowFactory,
@@ -263,6 +279,7 @@ async function start(): Promise<void> {
       galaxyLifecycle,
       galaxyCache,
       systemCache,
+      trackMetric,
     );
     const findGalaxy = new FindGalaxy(galaxyRepo, galaxyCache);
     const listGalaxies = new ListGalaxies(galaxyRepo, galaxyCache);
@@ -480,6 +497,12 @@ async function start(): Promise<void> {
       findLog,
       listLogs,
     );
+    const metricController = new MetricController(
+      trackMetric,
+      findMetric,
+      listMetrics,
+      metricsDashboard,
+    );
     // Middlewares
     const authMiddleware = new AuthMiddleware(jwtService, {
       issuer: process.env.JWT_ISSUER!,
@@ -487,8 +510,12 @@ async function start(): Promise<void> {
     });
     const scopeMiddleware = new ScopeMiddleware();
     const requestAuditMiddleware = new RequestAuditMiddleware(createLog);
+    const performanceMetricsMiddleware = new PerformanceMetricsMiddleware(
+      trackMetric,
+    );
 
     app.use(requestAuditMiddleware.bindRequestId());
+    app.use(performanceMetricsMiddleware.captureHttpDuration());
     app.use(requestAuditMiddleware.logResponse());
     // Routers
     app.use(
@@ -501,6 +528,7 @@ async function start(): Promise<void> {
         moonController,
         asteroidController,
         logController,
+        metricController,
         auth: authMiddleware,
         scope: scopeMiddleware,
       }),

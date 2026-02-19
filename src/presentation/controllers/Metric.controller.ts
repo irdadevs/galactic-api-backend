@@ -1,0 +1,64 @@
+import { Request, Response } from "express";
+import { TrackMetric } from "../../app/use-cases/commands/metrics/TrackMetric.command";
+import { FindMetric } from "../../app/use-cases/queries/metrics/FindMetric.query";
+import { ListMetrics } from "../../app/use-cases/queries/metrics/ListMetrics.query";
+import { MetricsDashboardQuery } from "../../app/use-cases/queries/metrics/MetricsDashboard.query";
+import { TrackMetricDTO } from "../security/metrics/TrackMetric.dto";
+import { FindMetricByIdDTO } from "../security/metrics/FindMetricById.dto";
+import { ListMetricsDTO } from "../security/metrics/ListMetrics.dto";
+import { MetricsDashboardDTO } from "../security/metrics/MetricsDashboard.dto";
+import errorHandler from "../../utils/errors/Errors.handler";
+import invalidBody from "../../utils/invalidBody";
+
+export class MetricController {
+  constructor(
+    private readonly trackMetric: TrackMetric,
+    private readonly findMetric: FindMetric,
+    private readonly listMetrics: ListMetrics,
+    private readonly dashboardMetrics: MetricsDashboardQuery,
+  ) {}
+
+  public track = async (req: Request, res: Response) => {
+    try {
+      const parsed = TrackMetricDTO.safeParse(req.body);
+      if (!parsed.success) return invalidBody(res, parsed.error);
+      const metric = await this.trackMetric.execute(parsed.data);
+      return res.status(201).json(metric);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public findById = async (req: Request, res: Response) => {
+    try {
+      const parsed = FindMetricByIdDTO.safeParse(req.params);
+      if (!parsed.success) return invalidBody(res, parsed.error);
+      const metric = await this.findMetric.byId(parsed.data.id);
+      return res.status(200).json(metric);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public list = async (req: Request, res: Response) => {
+    try {
+      const parsed = ListMetricsDTO.safeParse(req.query);
+      if (!parsed.success) return invalidBody(res, parsed.error);
+      const result = await this.listMetrics.execute(parsed.data);
+      return res.status(200).json(result);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public dashboard = async (req: Request, res: Response) => {
+    try {
+      const parsed = MetricsDashboardDTO.safeParse(req.query);
+      if (!parsed.success) return invalidBody(res, parsed.error);
+      const result = await this.dashboardMetrics.execute(parsed.data);
+      return res.status(200).json(result);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+}

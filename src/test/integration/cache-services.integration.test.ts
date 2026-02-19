@@ -14,6 +14,8 @@ import { StarCacheKeys } from "../../utils/cache/StarCache";
 import { IDS } from "../helpers/apiTestApp";
 import { Log } from "../../domain/aggregates/Log";
 import { LogCacheService } from "../../app/app-services/logs/LogCache.service";
+import { Metric } from "../../domain/aggregates/Metric";
+import { MetricCacheService } from "../../app/app-services/metrics/MetricCache.service";
 
 class MemoryCache implements ICache {
   private readonly store = new Map<string, unknown>();
@@ -173,5 +175,51 @@ describe("Integration - LogCacheService", () => {
 
     expect(await service.getById(log.id)).toBeNull();
     expect(await service.getList({ category: "security", limit: 10 })).toBeNull();
+  });
+});
+
+describe("Integration - MetricCacheService", () => {
+  test("stores and invalidates metric entity/list/dashboard keys", async () => {
+    const cache = new MemoryCache();
+    const service = new MetricCacheService(cache);
+    const metric = Metric.create({
+      metricName: "use_case.galaxy.create",
+      metricType: "use_case",
+      source: "CreateGalaxy",
+      durationMs: 42,
+      success: true,
+      userId: IDS.userA,
+      context: { systemCount: 10 },
+    });
+
+    await service.setMetric(metric);
+    await service.setList({ metricType: "use_case", limit: 10 }, { rows: [metric], total: 1 });
+    await service.setDashboard(
+      { hours: 24, topLimit: 10 },
+      {
+        from: new Date(),
+        to: new Date(),
+        summary: {
+          total: 1,
+          avgDurationMs: 42,
+          p95DurationMs: 42,
+          p99DurationMs: 42,
+          maxDurationMs: 42,
+          errorRate: 0,
+        },
+        byType: [],
+        topBottlenecks: [],
+        recentFailures: [],
+      },
+    );
+
+    expect(await service.getById(metric.id)).not.toBeNull();
+    expect(await service.getList({ metricType: "use_case", limit: 10 })).not.toBeNull();
+    expect(await service.getDashboard({ hours: 24, topLimit: 10 })).not.toBeNull();
+
+    await service.invalidateForMutation(metric.id);
+    expect(await service.getById(metric.id)).toBeNull();
+    expect(await service.getList({ metricType: "use_case", limit: 10 })).toBeNull();
+    expect(await service.getDashboard({ hours: 24, topLimit: 10 })).toBeNull();
   });
 });

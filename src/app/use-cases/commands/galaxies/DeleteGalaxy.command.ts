@@ -6,6 +6,7 @@ import {
   GalaxyLifecycleService,
   ProceduralRepoFactories,
 } from "../../../app-services/galaxies/GalaxyLifecycle.service";
+import { TrackMetric } from "../metrics/TrackMetric.command";
 
 export class DeleteGalaxy {
   constructor(
@@ -14,9 +15,11 @@ export class DeleteGalaxy {
     private readonly lifecycle: GalaxyLifecycleService,
     private readonly galaxyCache: GalaxyCacheService,
     private readonly systemCache: SystemCacheService,
+    private readonly metrics?: TrackMetric,
   ) {}
 
   async execute(id: Uuid): Promise<void> {
+    const startedAt = Date.now();
     const uow = await this.uowFactory.start();
     try {
       const repos = {
@@ -46,8 +49,24 @@ export class DeleteGalaxy {
           position: system.position,
         });
       }
+      await this.metrics?.execute({
+        metricName: "use_case.galaxy.delete",
+        metricType: "use_case",
+        source: "DeleteGalaxy",
+        durationMs: Date.now() - startedAt,
+        success: true,
+        context: { galaxyId: id.toString() },
+      });
     } catch (error) {
       await uow.rollback();
+      await this.metrics?.execute({
+        metricName: "use_case.galaxy.delete",
+        metricType: "use_case",
+        source: "DeleteGalaxy",
+        durationMs: Date.now() - startedAt,
+        success: false,
+        context: { galaxyId: id.toString() },
+      });
       throw error;
     }
   }

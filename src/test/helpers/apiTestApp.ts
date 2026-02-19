@@ -11,6 +11,7 @@ import { PlanetController } from "../../presentation/controllers/Planet.controll
 import { MoonController } from "../../presentation/controllers/Moon.controller";
 import { AsteroidController } from "../../presentation/controllers/Asteroid.controller";
 import { LogController } from "../../presentation/controllers/Log.controller";
+import { MetricController } from "../../presentation/controllers/Metric.controller";
 import { IJWT, JwtClaims } from "../../app/interfaces/Jwt.port";
 
 export const IDS = {
@@ -274,6 +275,44 @@ export function buildTestApi(): {
     listLogs: {
       execute: jest.fn(async () => ({ rows: [], total: 0 })),
     },
+    trackMetric: {
+      execute: jest.fn(async (payload: Record<string, unknown>) => ({
+        id: "1",
+        ...payload,
+        occurredAt: new Date(),
+      })),
+    },
+    findMetric: {
+      byId: jest.fn(async (id: string) => ({
+        id,
+        metricName: "http.request.duration",
+        metricType: "http",
+        source: "express",
+        durationMs: 10,
+        success: true,
+        occurredAt: new Date(),
+      })),
+    },
+    listMetrics: {
+      execute: jest.fn(async () => ({ rows: [], total: 0 })),
+    },
+    dashboardMetrics: {
+      execute: jest.fn(async () => ({
+        from: new Date(),
+        to: new Date(),
+        summary: {
+          total: 0,
+          avgDurationMs: 0,
+          p95DurationMs: 0,
+          p99DurationMs: 0,
+          maxDurationMs: 0,
+          errorRate: 0,
+        },
+        byType: [],
+        topBottlenecks: [],
+        recentFailures: [],
+      })),
+    },
   } as const;
 
   const userController = new UserController(
@@ -351,6 +390,12 @@ export function buildTestApi(): {
     mocks.findLog as any,
     mocks.listLogs as any,
   );
+  const metricController = new MetricController(
+    mocks.trackMetric as any,
+    mocks.findMetric as any,
+    mocks.listMetrics as any,
+    mocks.dashboardMetrics as any,
+  );
 
   const app = Express();
   app.use(Express.json());
@@ -367,6 +412,7 @@ export function buildTestApi(): {
       moonController,
       asteroidController,
       logController,
+      metricController,
       auth,
       scope,
     }),
