@@ -10,6 +10,7 @@ import { StarController } from "../../presentation/controllers/Star.controller";
 import { PlanetController } from "../../presentation/controllers/Planet.controller";
 import { MoonController } from "../../presentation/controllers/Moon.controller";
 import { AsteroidController } from "../../presentation/controllers/Asteroid.controller";
+import { LogController } from "../../presentation/controllers/Log.controller";
 import { IJWT, JwtClaims } from "../../app/interfaces/Jwt.port";
 
 export const IDS = {
@@ -251,6 +252,28 @@ export function buildTestApi(): {
     changeAsteroidType: { execute: jest.fn(async () => undefined) },
     changeAsteroidSize: { execute: jest.fn(async () => undefined) },
     changeAsteroidOrbital: { execute: jest.fn(async () => undefined) },
+    createLog: {
+      execute: jest.fn(async (payload: Record<string, unknown>) => ({
+        id: "1",
+        ...payload,
+        occurredAt: new Date(),
+        resolvedAt: null,
+        resolvedBy: null,
+      })),
+    },
+    resolveLog: { execute: jest.fn(async () => undefined) },
+    findLog: {
+      byId: jest.fn(async (id: string) => ({
+        id,
+        source: "http",
+        level: "warn",
+        category: "security",
+        message: "Forbidden",
+      })),
+    },
+    listLogs: {
+      execute: jest.fn(async () => ({ rows: [], total: 0 })),
+    },
   } as const;
 
   const userController = new UserController(
@@ -322,6 +345,12 @@ export function buildTestApi(): {
     mocks.findSystem as any,
     mocks.findGalaxy as any,
   );
+  const logController = new LogController(
+    mocks.createLog as any,
+    mocks.resolveLog as any,
+    mocks.findLog as any,
+    mocks.listLogs as any,
+  );
 
   const app = Express();
   app.use(Express.json());
@@ -337,6 +366,7 @@ export function buildTestApi(): {
       planetController,
       moonController,
       asteroidController,
+      logController,
       auth,
       scope,
     }),

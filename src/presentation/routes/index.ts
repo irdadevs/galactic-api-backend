@@ -7,6 +7,7 @@ import { StarController } from "../controllers/Star.controller";
 import { PlanetController } from "../controllers/Planet.controller";
 import { MoonController } from "../controllers/Moon.controller";
 import { AsteroidController } from "../controllers/Asteroid.controller";
+import { LogController } from "../controllers/Log.controller";
 import { UserRoutes } from "./User.routes";
 import { GalaxyRoutes } from "./Galaxy.routes";
 import { SystemRoutes } from "./System.routes";
@@ -14,6 +15,7 @@ import { StarRoutes } from "./Star.routes";
 import { PlanetRoutes } from "./Planet.routes";
 import { MoonRoutes } from "./Moon.routes";
 import { AsteroidRoutes } from "./Asteroid.routes";
+import { LogRoutes } from "./Log.routes";
 import { AuthMiddleware } from "../middlewares/Auth.middleware";
 import { ScopeMiddleware } from "../middlewares/Scope.middleware.ts";
 
@@ -52,6 +54,7 @@ export function buildApiRouter(deps: {
   planetController: PlanetController;
   moonController: MoonController;
   asteroidController: AsteroidController;
+  logController: LogController;
   auth: AuthMiddleware;
   scope: ScopeMiddleware;
 }): Router {
@@ -93,6 +96,11 @@ export function buildApiRouter(deps: {
     router,
     `${base}/asteroids`,
     AsteroidRoutes(deps.asteroidController, deps.auth, deps.scope),
+  );
+  registerRoutes(
+    router,
+    `${base}/logs`,
+    LogRoutes(deps.logController, deps.auth, deps.scope),
   );
 
   return router;

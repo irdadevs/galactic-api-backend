@@ -50,6 +50,8 @@ import { StarController } from "./presentation/controllers/Star.controller";
 import { PlanetController } from "./presentation/controllers/Planet.controller";
 import { MoonController } from "./presentation/controllers/Moon.controller";
 import { AsteroidController } from "./presentation/controllers/Asteroid.controller";
+import { LogController } from "./presentation/controllers/Log.controller";
+import { RequestAuditMiddleware } from "./presentation/middlewares/RequestAudit.middleware";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
 import { MailerRepo } from "./infra/repos/Mailer.repository";
@@ -93,6 +95,12 @@ import { ChangeAsteroidName } from "./app/use-cases/commands/asteroids/ChangeAst
 import { ChangeAsteroidType } from "./app/use-cases/commands/asteroids/ChangeAsteroidType.command";
 import { ChangeAsteroidSize } from "./app/use-cases/commands/asteroids/ChangeAsteroidSize.command";
 import { ChangeAsteroidOrbital } from "./app/use-cases/commands/asteroids/ChangeAsteroidOrbital.command";
+import LogRepo from "./infra/repos/Log.repository";
+import { LogCacheService } from "./app/app-services/logs/LogCache.service";
+import { CreateLog } from "./app/use-cases/commands/logs/CreateLog.command";
+import { ResolveLog } from "./app/use-cases/commands/logs/ResolveLog.command";
+import { FindLog } from "./app/use-cases/queries/logs/FindLog.query";
+import { ListLogs } from "./app/use-cases/queries/logs/ListLogs.query";
 
 // --------------------
 // Server config
@@ -171,6 +179,7 @@ async function start(): Promise<void> {
     const planetRepo = new PlanetRepo(postgres);
     const moonRepo = new MoonRepo(postgres);
     const asteroidRepo = new AsteroidRepo(postgres);
+    const logRepo = new LogRepo(postgres);
     const sessionRepo = new SessionRepo(postgres._getPool());
     const hasher = new HasherRepo();
     const mailer = new MailerRepo();
@@ -182,6 +191,7 @@ async function start(): Promise<void> {
     const planetCache = new PlanetCacheService(cache);
     const moonCache = new MoonCacheService(cache);
     const asteroidCache = new AsteroidCacheService(cache);
+    const logCache = new LogCacheService(cache);
     //! App layer
     // Use-cases
     const healthCheck = new HealthQuery();
@@ -375,6 +385,10 @@ async function start(): Promise<void> {
       asteroidCache,
       galaxyCache,
     );
+    const createLog = new CreateLog(logRepo, logCache);
+    const resolveLog = new ResolveLog(logRepo, logCache);
+    const findLog = new FindLog(logRepo, logCache);
+    const listLogs = new ListLogs(logRepo, logCache);
     // App-services
     const authService = new AuthService(
       loginUser,
@@ -460,12 +474,22 @@ async function start(): Promise<void> {
       findSystem,
       findGalaxy,
     );
+    const logController = new LogController(
+      createLog,
+      resolveLog,
+      findLog,
+      listLogs,
+    );
     // Middlewares
     const authMiddleware = new AuthMiddleware(jwtService, {
       issuer: process.env.JWT_ISSUER!,
       audience: process.env.JWT_AUDIENCE!,
     });
     const scopeMiddleware = new ScopeMiddleware();
+    const requestAuditMiddleware = new RequestAuditMiddleware(createLog);
+
+    app.use(requestAuditMiddleware.bindRequestId());
+    app.use(requestAuditMiddleware.logResponse());
     // Routers
     app.use(
       buildApiRouter({
@@ -476,6 +500,7 @@ async function start(): Promise<void> {
         planetController,
         moonController,
         asteroidController,
+        logController,
         auth: authMiddleware,
         scope: scopeMiddleware,
       }),

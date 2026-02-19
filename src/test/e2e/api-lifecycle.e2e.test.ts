@@ -250,4 +250,28 @@ describe("API E2E - auth, ownership and validation boundaries", () => {
       .expect(400);
     expect(mocks.changeAsteroidSize.execute).not.toHaveBeenCalled();
   });
+
+  test("allows only admin to list logs", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .get("/api/v1/logs")
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .expect(403);
+
+    await request(app)
+      .get("/api/v1/logs?limit=20")
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .expect(200);
+
+    expect(mocks.listLogs.execute).toHaveBeenCalled();
+  });
+
+  test("allows admin to resolve logs", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch("/api/v1/logs/10/resolve")
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .expect(204);
+    expect(mocks.resolveLog.execute).toHaveBeenCalledWith("10", IDS.admin);
+  });
 });

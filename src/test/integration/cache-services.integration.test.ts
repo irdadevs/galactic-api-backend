@@ -12,6 +12,8 @@ import { MoonCacheKeys } from "../../utils/cache/MoonCache";
 import { PlanetCacheKeys } from "../../utils/cache/PlanetCache";
 import { StarCacheKeys } from "../../utils/cache/StarCache";
 import { IDS } from "../helpers/apiTestApp";
+import { Log } from "../../domain/aggregates/Log";
+import { LogCacheService } from "../../app/app-services/logs/LogCache.service";
 
 class MemoryCache implements ICache {
   private readonly store = new Map<string, unknown>();
@@ -141,5 +143,35 @@ describe("Integration - AsteroidCacheService", () => {
 
     expect(await service.getById(asteroid.id)).toBeNull();
     expect(await service.getListBySystem(asteroid.systemId)).toBeNull();
+  });
+});
+
+describe("Integration - LogCacheService", () => {
+  test("stores and invalidates log entity/list keys", async () => {
+    const cache = new MemoryCache();
+    const service = new LogCacheService(cache);
+    const log = Log.create({
+      source: "http",
+      level: "error",
+      category: "security",
+      message: "Unauthorized access attempt",
+      statusCode: 401,
+      path: "/api/v1/galaxies",
+      method: "GET",
+      requestId: "req-1",
+      userId: IDS.userA,
+      context: { code: "UNAUTHORIZED" },
+    });
+
+    await service.setLog(log);
+    await service.setList({ category: "security", limit: 10 }, { rows: [log], total: 1 });
+
+    expect(await service.getById(log.id)).not.toBeNull();
+    expect(await service.getList({ category: "security", limit: 10 })).not.toBeNull();
+
+    await service.invalidateForMutation(log.id);
+
+    expect(await service.getById(log.id)).toBeNull();
+    expect(await service.getList({ category: "security", limit: 10 })).toBeNull();
   });
 });
