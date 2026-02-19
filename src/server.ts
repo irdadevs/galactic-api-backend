@@ -101,13 +101,19 @@ const app = Express();
 const PORT = Number(process.env.PORT ?? 8080);
 const ENVIRONMENT = process.env.NODE_ENV ?? "dev";
 const IS_PROD = ENVIRONMENT === "production";
+const CORS_ORIGIN = process.env.CORS_ORIGIN;
 
 // --------------------
 // Global middlewares
 // --------------------
 app.set("trust proxy", 1);
 app.use(Express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: CORS_ORIGIN ? CORS_ORIGIN.split(",").map((x) => x.trim()) : true,
+    credentials: true,
+  }),
+);
 app.use(hpp());
 app.use(compression());
 app.use(

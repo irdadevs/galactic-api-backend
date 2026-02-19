@@ -15,6 +15,63 @@ describe("API E2E - auth, ownership and validation boundaries", () => {
       .expect(401);
   });
 
+  test("sets access and refresh cookies on login", async () => {
+    const { app } = buildTestApi();
+    const response = await request(app)
+      .post("/api/v1/users/login")
+      .send({ email: "a@test.com", rawPassword: "123456" })
+      .expect(200);
+
+    const rawSetCookie = response.headers["set-cookie"];
+    const setCookie = Array.isArray(rawSetCookie)
+      ? rawSetCookie
+      : rawSetCookie
+        ? [rawSetCookie]
+        : [];
+    expect(setCookie.some((value: string) => value.startsWith("access_token="))).toBe(true);
+    expect(setCookie.some((value: string) => value.startsWith("refresh_token="))).toBe(true);
+    expect(response.body.user).toBeDefined();
+    expect(response.body.accessToken).toBeUndefined();
+    expect(response.body.refreshToken).toBeUndefined();
+  });
+
+  test("accepts access token from cookie for protected routes", async () => {
+    const { app } = buildTestApi();
+    await request(app)
+      .get("/api/v1/galaxies")
+      .set("Cookie", [`access_token=${IDS.userA}|User`])
+      .expect(200);
+  });
+
+  test("uses refresh token from cookie in refresh endpoint", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .post("/api/v1/users/token/refresh")
+      .set("Cookie", ["refresh_token=valid.refresh.token"])
+      .expect(200);
+    expect(mocks.authService.refresh).toHaveBeenCalledWith("valid.refresh.token");
+  });
+
+  test("uses refresh token cookie for logout and clears auth cookies", async () => {
+    const { app, mocks } = buildTestApi();
+    const response = await request(app)
+      .post("/api/v1/users/logout")
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .set("Cookie", ["refresh_token=valid.refresh.token"])
+      .expect(204);
+    expect(mocks.authService.logoutByRefreshToken).toHaveBeenCalledWith(
+      "valid.refresh.token",
+    );
+    const rawSetCookie = response.headers["set-cookie"];
+    const setCookie = Array.isArray(rawSetCookie)
+      ? rawSetCookie
+      : rawSetCookie
+        ? [rawSetCookie]
+        : [];
+    expect(setCookie.some((value: string) => value.startsWith("access_token=;"))).toBe(true);
+    expect(setCookie.some((value: string) => value.startsWith("refresh_token=;"))).toBe(true);
+  });
+
   test("allows any authenticated user to create galaxies and injects ownerId from auth context", async () => {
     const { app, mocks } = buildTestApi();
 

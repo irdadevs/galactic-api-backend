@@ -115,6 +115,7 @@ export function buildTestApi(): {
       })),
       refresh: jest.fn(async () => ({ accessToken: "a2", refreshToken: "b2" })),
       logout: jest.fn(async () => undefined),
+      logoutByRefreshToken: jest.fn(async () => undefined),
       logoutAll: jest.fn(async () => undefined),
     },
     platformService: {

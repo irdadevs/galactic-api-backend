@@ -24,6 +24,8 @@ import errorHandler from "../../utils/errors/Errors.handler";
 import invalidBody from "../../utils/invalidBody";
 import { ListUsersDTO } from "../security/users/ListUsers.dto";
 import { Email, Username, Uuid } from "../../domain/aggregates/User";
+import { AUTH_COOKIE_NAMES, getCookie } from "../../utils/http/Cookies";
+import { TOKEN_TIMES_MAP } from "../../utils/TokenTimes.map";
 
 export class UserController {
   constructor(
@@ -34,6 +36,31 @@ export class UserController {
     private readonly platformService: PlatformService,
     private readonly lifecycleService: LifecycleService,
   ) {}
+
+  private cookieOptions(maxAgeMs: number) {
+    const isProd = process.env.NODE_ENV === "production";
+    return {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? ("none" as const) : ("lax" as const),
+      path: "/",
+      maxAge: maxAgeMs,
+    };
+  }
+
+  private clearCookieOptions() {
+    const isProd = process.env.NODE_ENV === "production";
+    return {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? ("none" as const) : ("lax" as const),
+      path: "/",
+    };
+  }
+
+  private getRefreshTokenFromRequest(req: Request): string | null {
+    return getCookie(req, AUTH_COOKIE_NAMES.refreshToken) ?? null;
+  }
 
   public health = async (_req: Request, res: Response) => {
     try {
@@ -56,6 +83,17 @@ export class UserController {
         ip: req.ip,
       });
 
+      res.cookie(
+        AUTH_COOKIE_NAMES.accessToken,
+        result.accessToken,
+        this.cookieOptions(TOKEN_TIMES_MAP.fifteenMinutes * 1000),
+      );
+      res.cookie(
+        AUTH_COOKIE_NAMES.refreshToken,
+        result.refreshToken,
+        this.cookieOptions(TOKEN_TIMES_MAP.oneWeek * 1000),
+      );
+
       return res.status(200).json({
         user: {
           id: result.user.id,
@@ -63,8 +101,6 @@ export class UserController {
           role: result.user.role,
           verified: result.user.isVerified,
         },
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
       });
     } catch (err: unknown) {
       return errorHandler(err, res);
@@ -73,14 +109,30 @@ export class UserController {
 
   public refresh = async (req: Request, res: Response) => {
     try {
-      const parsed = RefreshDTO.safeParse(req.body);
-      if (!parsed.success) {
-        return invalidBody(res, parsed.error);
+      const cookieRefreshToken = this.getRefreshTokenFromRequest(req);
+      let refreshToken = cookieRefreshToken;
+
+      if (!refreshToken) {
+        const parsed = RefreshDTO.safeParse(req.body);
+        if (!parsed.success) {
+          return invalidBody(res, parsed.error);
+        }
+        refreshToken = parsed.data.refreshToken;
       }
 
-      const tokens = await this.authService.refresh(parsed.data.refreshToken);
+      const tokens = await this.authService.refresh(refreshToken);
+      res.cookie(
+        AUTH_COOKIE_NAMES.accessToken,
+        tokens.accessToken,
+        this.cookieOptions(TOKEN_TIMES_MAP.fifteenMinutes * 1000),
+      );
+      res.cookie(
+        AUTH_COOKIE_NAMES.refreshToken,
+        tokens.refreshToken,
+        this.cookieOptions(TOKEN_TIMES_MAP.oneWeek * 1000),
+      );
 
-      return res.status(200).json(tokens);
+      return res.status(200).json({ ok: true });
     } catch (err: unknown) {
       return errorHandler(err, res);
     }
@@ -88,12 +140,19 @@ export class UserController {
 
   public logout = async (req: Request, res: Response) => {
     try {
-      const parsed = LogoutDTO.safeParse(req.body);
-      if (!parsed.success) {
-        return invalidBody(res, parsed.error);
-      }
+      const refreshToken = this.getRefreshTokenFromRequest(req);
+      if (refreshToken) {
+        await this.authService.logoutByRefreshToken(refreshToken);
+      } else {
+        const parsed = LogoutDTO.safeParse(req.body);
+        if (!parsed.success) {
+          return invalidBody(res, parsed.error);
+        }
 
-      await this.authService.logout(parsed.data.sessionId);
+        await this.authService.logout(parsed.data.sessionId);
+      }
+      res.clearCookie(AUTH_COOKIE_NAMES.accessToken, this.clearCookieOptions());
+      res.clearCookie(AUTH_COOKIE_NAMES.refreshToken, this.clearCookieOptions());
 
       return res.status(204).send();
     } catch (err: unknown) {
@@ -104,6 +163,8 @@ export class UserController {
   public logoutAll = async (req: Request, res: Response) => {
     try {
       await this.authService.logoutAll(req.auth.userId);
+      res.clearCookie(AUTH_COOKIE_NAMES.accessToken, this.clearCookieOptions());
+      res.clearCookie(AUTH_COOKIE_NAMES.refreshToken, this.clearCookieOptions());
 
       return res.status(204).send();
     } catch (err: unknown) {

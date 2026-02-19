@@ -64,6 +64,12 @@ export class AuthService {
     return this.logoutSession.execute(sessionId);
   }
 
+  async logoutByRefreshToken(refreshToken: string): Promise<void> {
+    const claims = this.jwt.verifyRefreshToken(refreshToken);
+    if (!claims.sessionId) return;
+    await this.logoutSession.execute(claims.sessionId);
+  }
+
   logoutAll(userId: string) {
     return this.logoutAllSessions.execute(userId);
   }

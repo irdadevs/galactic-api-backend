@@ -3,6 +3,7 @@
 import { Request, Response, NextFunction } from "express";
 import { IJWT, JwtOpts } from "../../app/interfaces/Jwt.port";
 import { Uuid } from "../../domain/aggregates/User";
+import { AUTH_COOKIE_NAMES, getCookie } from "../../utils/http/Cookies";
 
 export class AuthMiddleware {
   constructor(
@@ -12,10 +13,14 @@ export class AuthMiddleware {
 
   private getBearer(req: Request): string | null {
     const h = req.header("authorization");
-    if (!h) return null;
-    const [scheme, token] = h.split(" ");
-    if (scheme?.toLowerCase() !== "bearer") return null;
-    return token;
+    if (h) {
+      const [scheme, token] = h.split(" ");
+      if (scheme?.toLowerCase() === "bearer" && token) {
+        return token;
+      }
+    }
+
+    return getCookie(req, AUTH_COOKIE_NAMES.accessToken);
   }
 
   requireAuth() {
