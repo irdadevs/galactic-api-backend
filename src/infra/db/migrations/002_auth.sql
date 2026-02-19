@@ -37,21 +37,21 @@ CREATE TABLE
 CREATE TABLE
     IF NOT EXISTS auth.user_sessions (
         id UUID PRIMARY KEY,
-        user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+        user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
         refresh_token_hash TEXT NOT NULL,
         user_agent TEXT,
         ip INET,
         is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
-        created_at TIMESTAMP NOT NULL DEFAULT NOW (),
-        expires_at TIMESTAMP NOT NULL
+        created_at timestamptz NOT NULL DEFAULT now_utc (),
+        expires_at timestamptz NOT NULL
     );
 
 -- Helpful indexes for sessions
-CREATE INDEX idx_sessions_user_id ON sessions (user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON auth.user_sessions (user_id);
 
-CREATE INDEX idx_sessions_expires_at ON sessions (expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON auth.user_sessions (expires_at);
 
-CREATE INDEX idx_sessions_active ON sessions (user_id, is_revoked);
+CREATE INDEX IF NOT EXISTS idx_sessions_active ON auth.user_sessions (user_id, is_revoked);
 
 -- === Triggers ===
 DROP TRIGGER IF EXISTS trg_users_updated_at ON auth.users;
@@ -60,7 +60,3 @@ CREATE TRIGGER trg_users_updated_at BEFORE
 UPDATE ON auth.users FOR EACH ROW EXECUTE FUNCTION set_updated_at ();
 
 DROP TRIGGER IF EXISTS trg_user_sessions_close ON auth.user_sessions;
-
-CREATE TRIGGER trg_user_sessions_close BEFORE INSERT
-OR
-UPDATE ON auth.user_sessions FOR EACH ROW EXECUTE FUNCTION auth_close_session ();

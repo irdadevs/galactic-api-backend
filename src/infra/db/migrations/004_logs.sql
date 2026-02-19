@@ -17,10 +17,15 @@ CREATE TABLE IF NOT EXISTS logs.error_log (
   user_agent text,
   fingerprint text,
   tags text[] NOT NULL DEFAULT '{}',
+  is_archived boolean NOT NULL DEFAULT false,
+  archived_at timestamptz,
   resolved_at timestamptz,
   resolved_by uuid REFERENCES auth.users(id),
   occurred_at timestamptz NOT NULL DEFAULT now_utc ()
 );
+
+CREATE TABLE IF NOT EXISTS logs.error_log_archive
+(LIKE logs.error_log INCLUDING ALL);
 
 CREATE INDEX IF NOT EXISTS idx_error_log_time ON logs.error_log (occurred_at);
 CREATE INDEX IF NOT EXISTS idx_error_log_user ON logs.error_log (user_id);
@@ -30,6 +35,35 @@ CREATE INDEX IF NOT EXISTS idx_error_log_status_code ON logs.error_log (status_c
 CREATE INDEX IF NOT EXISTS idx_error_log_request_id ON logs.error_log (request_id);
 CREATE INDEX IF NOT EXISTS idx_error_log_fingerprint ON logs.error_log (fingerprint);
 CREATE INDEX IF NOT EXISTS idx_error_log_resolved_at ON logs.error_log (resolved_at);
+CREATE INDEX IF NOT EXISTS idx_error_log_unresolved_active
+  ON logs.error_log (occurred_at DESC)
+  WHERE resolved_at IS NULL AND is_archived = false;
+CREATE INDEX IF NOT EXISTS idx_error_log_active
+  ON logs.error_log (occurred_at DESC)
+  WHERE is_archived = false;
+
+CREATE OR REPLACE FUNCTION logs_soft_archive_before(p_before timestamptz)
+RETURNS bigint AS $$
+DECLARE
+  moved_count bigint := 0;
+BEGIN
+  INSERT INTO logs.error_log_archive
+  SELECT *
+  FROM logs.error_log
+  WHERE occurred_at < p_before
+    AND is_archived = false
+  ON CONFLICT DO NOTHING;
+
+  UPDATE logs.error_log
+  SET is_archived = true,
+      archived_at = now_utc()
+  WHERE occurred_at < p_before
+    AND is_archived = false;
+
+  GET DIAGNOSTICS moved_count = ROW_COUNT;
+  RETURN moved_count;
+END;
+$$ LANGUAGE plpgsql;
 
 -- === Migration log ===
 CREATE TABLE IF NOT EXISTS logs.migration_log (

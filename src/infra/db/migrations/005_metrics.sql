@@ -18,14 +18,19 @@ CREATE TABLE IF NOT EXISTS metrics.performance_metrics (
   metric_name non_empty_text NOT NULL,
   metric_type non_empty_text NOT NULL,
   source non_empty_text NOT NULL,
-  duration_ms numeric NOT NULL CHECK (duration_ms >= 0),
+  duration_ms double precision NOT NULL CHECK (duration_ms >= 0),
   success boolean NOT NULL DEFAULT true,
   user_id uuid REFERENCES auth.users (id),
   request_id text,
   tags jsonb NOT NULL DEFAULT '{}'::jsonb,
   context jsonb NOT NULL DEFAULT '{}'::jsonb,
+  is_archived boolean NOT NULL DEFAULT false,
+  archived_at timestamptz,
   occurred_at timestamptz NOT NULL DEFAULT now_utc ()
 );
+
+CREATE TABLE IF NOT EXISTS metrics.performance_metrics_archive
+(LIKE metrics.performance_metrics INCLUDING ALL);
 
 CREATE INDEX IF NOT EXISTS idx_perf_metrics_time
   ON metrics.performance_metrics (occurred_at);
@@ -41,6 +46,34 @@ CREATE INDEX IF NOT EXISTS idx_perf_metrics_request
   ON metrics.performance_metrics (request_id);
 CREATE INDEX IF NOT EXISTS idx_perf_metrics_duration
   ON metrics.performance_metrics (duration_ms DESC);
+CREATE INDEX IF NOT EXISTS idx_perf_metrics_time_type_success
+  ON metrics.performance_metrics (occurred_at DESC, metric_type, success);
+CREATE INDEX IF NOT EXISTS idx_perf_metrics_active_time
+  ON metrics.performance_metrics (occurred_at DESC)
+  WHERE is_archived = false;
+
+CREATE OR REPLACE FUNCTION metrics_soft_archive_before(p_before timestamptz)
+RETURNS bigint AS $$
+DECLARE
+  moved_count bigint := 0;
+BEGIN
+  INSERT INTO metrics.performance_metrics_archive
+  SELECT *
+  FROM metrics.performance_metrics
+  WHERE occurred_at < p_before
+    AND is_archived = false
+  ON CONFLICT DO NOTHING;
+
+  UPDATE metrics.performance_metrics
+  SET is_archived = true,
+      archived_at = now_utc()
+  WHERE occurred_at < p_before
+    AND is_archived = false;
+
+  GET DIAGNOSTICS moved_count = ROW_COUNT;
+  RETURN moved_count;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS metrics.daily_usage (
   event_date date NOT NULL,

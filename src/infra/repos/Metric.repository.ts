@@ -91,6 +91,7 @@ export default class MetricRepo implements IMetric {
     const fromSql = `
       FROM metrics.performance_metrics
       ${whereSql}
+      ${where.length > 0 ? "AND" : "WHERE"} is_archived = false
     `;
 
     const page = await paginateFrom<QueryResultRow>(this.db, fromSql, params.values, {
@@ -140,7 +141,7 @@ export default class MetricRepo implements IMetric {
         COALESCE(MAX(duration_ms), 0)::float8 AS max_duration_ms,
         COALESCE(AVG(CASE WHEN success THEN 0 ELSE 1 END), 0)::float8 AS error_rate
       FROM metrics.performance_metrics
-      WHERE occurred_at >= $1 AND occurred_at <= $2
+      WHERE occurred_at >= $1 AND occurred_at <= $2 AND is_archived = false
       `,
       [from, to],
     );
@@ -160,7 +161,7 @@ export default class MetricRepo implements IMetric {
         COALESCE(percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms), 0)::float8 AS p95_duration_ms,
         COALESCE(AVG(CASE WHEN success THEN 0 ELSE 1 END), 0)::float8 AS error_rate
       FROM metrics.performance_metrics
-      WHERE occurred_at >= $1 AND occurred_at <= $2
+      WHERE occurred_at >= $1 AND occurred_at <= $2 AND is_archived = false
       GROUP BY metric_type
       ORDER BY avg_duration_ms DESC
       `,
@@ -188,7 +189,7 @@ export default class MetricRepo implements IMetric {
         COALESCE(MAX(duration_ms), 0)::float8 AS max_duration_ms,
         COALESCE(AVG(CASE WHEN success THEN 0 ELSE 1 END), 0)::float8 AS error_rate
       FROM metrics.performance_metrics
-      WHERE occurred_at >= $1 AND occurred_at <= $2
+      WHERE occurred_at >= $1 AND occurred_at <= $2 AND is_archived = false
       GROUP BY metric_name, metric_type, source
       HAVING COUNT(*) >= 2
       ORDER BY p95_duration_ms DESC, avg_duration_ms DESC
@@ -209,7 +210,7 @@ export default class MetricRepo implements IMetric {
       `
       SELECT id, metric_name, metric_type, source, duration_ms, occurred_at, context
       FROM metrics.performance_metrics
-      WHERE occurred_at >= $1 AND occurred_at <= $2 AND success = false
+      WHERE occurred_at >= $1 AND occurred_at <= $2 AND success = false AND is_archived = false
       ORDER BY occurred_at DESC
       LIMIT 20
       `,

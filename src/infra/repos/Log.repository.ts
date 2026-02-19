@@ -141,6 +141,7 @@ export default class LogRepo implements ILog {
     const fromSql = `
       FROM logs.error_log
       ${whereSql}
+      ${where.length > 0 ? "AND" : "WHERE"} is_archived = false
     `;
 
     const page = await paginateFrom<QueryResultRow>(this.db, fromSql, params.values, {

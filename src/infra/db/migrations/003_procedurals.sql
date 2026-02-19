@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS procedurals.systems (
 );
 
 CREATE INDEX IF NOT EXISTS idx_systems_galaxy ON procedurals.systems (galaxy_id);
+CREATE INDEX IF NOT EXISTS idx_systems_galaxy_name ON procedurals.systems (galaxy_id, name);
+CREATE INDEX IF NOT EXISTS idx_systems_position_xyz ON procedurals.systems (position_x, position_y, position_z);
 
 CREATE TABLE IF NOT EXISTS procedurals.stars (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
@@ -49,6 +51,7 @@ CREATE TABLE IF NOT EXISTS procedurals.stars (
 );
 
 CREATE INDEX IF NOT EXISTS idx_stars_system ON procedurals.stars (system_id);
+CREATE INDEX IF NOT EXISTS idx_stars_system_name ON procedurals.stars (system_id, name);
 
 CREATE TABLE IF NOT EXISTS procedurals.planets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
@@ -69,6 +72,7 @@ CREATE TABLE IF NOT EXISTS procedurals.planets (
 );
 
 CREATE INDEX IF NOT EXISTS idx_planets_system ON procedurals.planets (system_id);
+CREATE INDEX IF NOT EXISTS idx_planets_system_name ON procedurals.planets (system_id, name);
 
 CREATE TABLE IF NOT EXISTS procedurals.moons (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
@@ -87,6 +91,7 @@ CREATE TABLE IF NOT EXISTS procedurals.moons (
 );
 
 CREATE INDEX IF NOT EXISTS idx_moons_planet ON procedurals.moons (planet_id);
+CREATE INDEX IF NOT EXISTS idx_moons_planet_name ON procedurals.moons (planet_id, name);
 
 CREATE TABLE IF NOT EXISTS procedurals.asteroids (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid (),
@@ -100,6 +105,7 @@ CREATE TABLE IF NOT EXISTS procedurals.asteroids (
 );
 
 CREATE INDEX IF NOT EXISTS idx_asteroids_system ON procedurals.asteroids (system_id);
+CREATE INDEX IF NOT EXISTS idx_asteroids_system_name ON procedurals.asteroids (system_id, name);
 
 -- === Triggers for updated_at ===
 DROP TRIGGER IF EXISTS trg_galaxies_updated_at ON procedurals.galaxies;
