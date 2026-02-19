@@ -6,7 +6,7 @@ import { ScopeMiddleware } from "../middlewares/Scope.middleware.ts";
 export function UserRoutes(
   ctrl: UserController,
   auth: AuthMiddleware,
-  scope: ScopeMiddleware,
+  _scope: ScopeMiddleware,
 ): RouteDef[] {
   return [
     {
@@ -81,6 +81,48 @@ export function UserRoutes(
       path: "/me",
       before: [auth.requireAuth()],
       handler: ctrl.selfSoftDelete,
+    },
+    {
+      method: "get",
+      path: "",
+      before: [auth.requireAuth(), auth.requireRoles("Admin")],
+      handler: ctrl.list,
+    },
+    {
+      method: "get",
+      path: "/email/:email",
+      before: [auth.requireAuth(), auth.requireRoles("Admin")],
+      handler: ctrl.findUserByEmail,
+    },
+    {
+      method: "get",
+      path: "/username/:username",
+      before: [auth.requireAuth(), auth.requireRoles("Admin")],
+      handler: ctrl.findUserByUsername,
+    },
+    {
+      method: "get",
+      path: "/:id",
+      before: [auth.requireAuth(), auth.requireRoles("Admin")],
+      handler: ctrl.findUserById,
+    },
+    {
+      method: "patch",
+      path: "/:id/role",
+      before: [auth.requireAuth(), auth.requireRoles("Admin")],
+      handler: ctrl.changeRole,
+    },
+    {
+      method: "delete",
+      path: "/soft-delete",
+      before: [auth.requireAuth(), auth.requireRoles("Admin")],
+      handler: ctrl.softDelete,
+    },
+    {
+      method: "post",
+      path: "/restore",
+      before: [auth.requireAuth(), auth.requireRoles("Admin")],
+      handler: ctrl.restore,
     },
   ];
 }

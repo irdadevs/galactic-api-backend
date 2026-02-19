@@ -114,6 +114,50 @@ describe("API E2E - auth, ownership and validation boundaries", () => {
     expect(mocks.listGalaxies.execute).toHaveBeenCalled();
   });
 
+  test("allows only admin to list users", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .get("/api/v1/users")
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .expect(403);
+
+    await request(app)
+      .get("/api/v1/users?limit=20")
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .expect(200);
+
+    expect(mocks.listUsers.execute).toHaveBeenCalled();
+  });
+
+  test("allows admin to change user role", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .patch(`/api/v1/users/${IDS.userA}/role`)
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .send({ newRole: "Admin" })
+      .expect(204);
+
+    expect(mocks.platformService.changeRole).toHaveBeenCalled();
+  });
+
+  test("allows admin to soft-delete and restore users", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .delete("/api/v1/users/soft-delete")
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .send({ id: IDS.userA })
+      .expect(204);
+
+    await request(app)
+      .post("/api/v1/users/restore")
+      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .send({ id: IDS.userA })
+      .expect(204);
+
+    expect(mocks.lifecycleService.softDelete).toHaveBeenCalled();
+    expect(mocks.lifecycleService.restore).toHaveBeenCalled();
+  });
+
   test("forbids non-admin access to other user galaxy by id", async () => {
     const { app } = buildTestApi();
     await request(app)
