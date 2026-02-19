@@ -109,6 +109,7 @@ import { TrackMetric } from "./app/use-cases/commands/metrics/TrackMetric.comman
 import { FindMetric } from "./app/use-cases/queries/metrics/FindMetric.query";
 import { ListMetrics } from "./app/use-cases/queries/metrics/ListMetrics.query";
 import { MetricsDashboardQuery } from "./app/use-cases/queries/metrics/MetricsDashboard.query";
+import { DbMetricInput } from "./config/db/DbMetrics";
 
 // --------------------
 // Server config
@@ -235,6 +236,21 @@ async function start(): Promise<void> {
     const findMetric = new FindMetric(metricRepo, metricCache);
     const listMetrics = new ListMetrics(metricRepo, metricCache);
     const metricsDashboard = new MetricsDashboardQuery(metricRepo, metricCache);
+    const dbMetricTracker = {
+      track: async (input: DbMetricInput): Promise<void> => {
+        await trackMetric.execute({
+          metricName: input.metricName,
+          metricType: "db",
+          source: input.source,
+          durationMs: input.durationMs,
+          success: input.success,
+          tags: input.tags,
+          context: input.context,
+        });
+      },
+    };
+    postgres.setMetricTracker(dbMetricTracker);
+    uowFactory.setMetricTracker(dbMetricTracker);
     const createGalaxy = new CreateGalaxy(
       uowFactory,
       {
