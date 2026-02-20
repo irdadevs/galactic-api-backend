@@ -242,6 +242,19 @@ describe("User aggregate", () => {
     expect(user.deletedAt?.toISOString()).toBe("2025-01-04T00:00:00.000Z");
   });
 
+  it("unarchives user and restores active flags", () => {
+    const user = User.create(validInput);
+    user.archive(new Date("2025-01-04T00:00:00.000Z"));
+
+    user.unarchive(new Date("2025-01-06T00:00:00.000Z"));
+
+    expect(user.isArchived).toBe(false);
+    expect(user.archivedAt).toBeNull();
+    expect(user.isDeleted).toBe(false);
+    expect(user.deletedAt).toBeNull();
+    expect(user.lastActivityAt.toISOString()).toBe("2025-01-06T00:00:00.000Z");
+  });
+
   it("touches activity timestamp", () => {
     const user = User.create(validInput);
     user.touchActivity(new Date("2025-01-05T00:00:00.000Z"));

@@ -376,6 +376,17 @@ export class User {
     this.props.deletedAt = null;
   }
 
+  unarchive(at?: Date): void {
+    if (!this.props.isArchived) {
+      return;
+    }
+    this.props.isArchived = false;
+    this.props.archivedAt = null;
+    this.props.isDeleted = false;
+    this.props.deletedAt = null;
+    this.props.lastActivityAt = at ?? new Date();
+  }
+
   touchActivity(at?: Date): void {
     this.props.lastActivityAt = at ?? new Date();
   }
