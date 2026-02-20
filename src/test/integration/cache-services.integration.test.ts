@@ -16,6 +16,9 @@ import { Log } from "../../domain/aggregates/Log";
 import { LogCacheService } from "../../app/app-services/logs/LogCache.service";
 import { Metric } from "../../domain/aggregates/Metric";
 import { MetricCacheService } from "../../app/app-services/metrics/MetricCache.service";
+import { Donation } from "../../domain/aggregates/Donation";
+import { DonationCacheService } from "../../app/app-services/donations/DonationCache.service";
+import { DonationCacheKeys } from "../../utils/cache/DonationCache";
 
 class MemoryCache implements ICache {
   private readonly store = new Map<string, unknown>();
@@ -221,5 +224,37 @@ describe("Integration - MetricCacheService", () => {
     expect(await service.getById(metric.id)).toBeNull();
     expect(await service.getList({ metricType: "use_case", limit: 10 })).toBeNull();
     expect(await service.getDashboard({ hours: 24, topLimit: 10 })).toBeNull();
+  });
+});
+
+describe("Integration - DonationCacheService", () => {
+  test("stores and invalidates donation entity/list keys", async () => {
+    const cache = new MemoryCache();
+    const service = new DonationCacheService(cache);
+    const donation = Donation.create({
+      userId: IDS.userA,
+      donationType: "monthly",
+      amountMinor: 999,
+      currency: "USD",
+      providerSessionId: "cs_cache_test",
+      providerSubscriptionId: "sub_cache_test",
+      status: "active",
+    });
+
+    await service.setDonation(donation);
+    await service.setList({ userId: IDS.userA, limit: 10 }, { rows: [donation], total: 1 });
+    await cache.set(DonationCacheKeys.byProviderSessionId("legacy_session"), {
+      id: "legacy",
+    });
+
+    expect(await service.getById(donation.id)).not.toBeNull();
+    expect(await service.getByProviderSessionId(donation.providerSessionId)).not.toBeNull();
+    expect(await service.getList({ userId: IDS.userA, limit: 10 })).not.toBeNull();
+
+    await service.invalidateForMutation(donation);
+
+    expect(await service.getById(donation.id)).toBeNull();
+    expect(await service.getByProviderSessionId(donation.providerSessionId)).toBeNull();
+    expect(await service.getList({ userId: IDS.userA, limit: 10 })).toBeNull();
   });
 });

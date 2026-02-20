@@ -53,6 +53,7 @@ import { AsteroidController } from "./presentation/controllers/Asteroid.controll
 import { LogController } from "./presentation/controllers/Log.controller";
 import { RequestAuditMiddleware } from "./presentation/middlewares/RequestAudit.middleware";
 import { MetricController } from "./presentation/controllers/Metric.controller";
+import { DonationController } from "./presentation/controllers/Donation.controller";
 import { PerformanceMetricsMiddleware } from "./presentation/middlewares/PerformanceMetrics.middleware";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
@@ -104,11 +105,19 @@ import { ResolveLog } from "./app/use-cases/commands/logs/ResolveLog.command";
 import { FindLog } from "./app/use-cases/queries/logs/FindLog.query";
 import { ListLogs } from "./app/use-cases/queries/logs/ListLogs.query";
 import MetricRepo from "./infra/repos/Metric.repository";
+import DonationRepo from "./infra/repos/Donation.repository";
+import { PaymentGatewayRepo } from "./infra/repos/PaymentGateway.repository";
 import { MetricCacheService } from "./app/app-services/metrics/MetricCache.service";
+import { DonationCacheService } from "./app/app-services/donations/DonationCache.service";
 import { TrackMetric } from "./app/use-cases/commands/metrics/TrackMetric.command";
 import { FindMetric } from "./app/use-cases/queries/metrics/FindMetric.query";
 import { ListMetrics } from "./app/use-cases/queries/metrics/ListMetrics.query";
 import { MetricsDashboardQuery } from "./app/use-cases/queries/metrics/MetricsDashboard.query";
+import { CreateDonationCheckout } from "./app/use-cases/commands/donations/CreateDonationCheckout.command";
+import { ConfirmDonationBySession } from "./app/use-cases/commands/donations/ConfirmDonationBySession.command";
+import { CancelDonation } from "./app/use-cases/commands/donations/CancelDonation.command";
+import { FindDonation } from "./app/use-cases/queries/donations/FindDonation.query";
+import { ListDonations } from "./app/use-cases/queries/donations/ListDonations.query";
 import { DbMetricInput } from "./config/db/DbMetrics";
 
 // --------------------
@@ -190,6 +199,7 @@ async function start(): Promise<void> {
     const asteroidRepo = new AsteroidRepo(postgres);
     const logRepo = new LogRepo(postgres);
     const metricRepo = new MetricRepo(postgres);
+    const donationRepo = new DonationRepo(postgres);
     const sessionRepo = new SessionRepo(postgres._getPool());
     const hasher = new HasherRepo();
     const mailer = new MailerRepo();
@@ -203,6 +213,8 @@ async function start(): Promise<void> {
     const asteroidCache = new AsteroidCacheService(cache);
     const logCache = new LogCacheService(cache);
     const metricCache = new MetricCacheService(cache);
+    const donationCache = new DonationCacheService(cache);
+    const paymentGateway = new PaymentGatewayRepo();
     //! App layer
     // Use-cases
     const healthCheck = new HealthQuery();
@@ -236,6 +248,23 @@ async function start(): Promise<void> {
     const findMetric = new FindMetric(metricRepo, metricCache);
     const listMetrics = new ListMetrics(metricRepo, metricCache);
     const metricsDashboard = new MetricsDashboardQuery(metricRepo, metricCache);
+    const createDonationCheckout = new CreateDonationCheckout(
+      donationRepo,
+      paymentGateway,
+      donationCache,
+    );
+    const confirmDonationBySession = new ConfirmDonationBySession(
+      donationRepo,
+      paymentGateway,
+      donationCache,
+    );
+    const cancelDonation = new CancelDonation(
+      donationRepo,
+      paymentGateway,
+      donationCache,
+    );
+    const findDonation = new FindDonation(donationRepo, donationCache);
+    const listDonations = new ListDonations(donationRepo, donationCache);
     const dbMetricTracker = {
       track: async (input: DbMetricInput): Promise<void> => {
         await trackMetric.execute({
@@ -309,7 +338,10 @@ async function start(): Promise<void> {
       galaxyCache,
     );
     const findSystem = new FindSystem(systemRepo, systemCache);
-    const listSystemsByGalaxy = new ListSystemsByGalaxy(systemRepo, systemCache);
+    const listSystemsByGalaxy = new ListSystemsByGalaxy(
+      systemRepo,
+      systemCache,
+    );
     const changeSystemName = new ChangeSystemName(
       systemRepo,
       systemCache,
@@ -347,7 +379,10 @@ async function start(): Promise<void> {
       galaxyCache,
     );
     const findPlanet = new FindPlanet(planetRepo, planetCache);
-    const listPlanetsBySystem = new ListPlanetsBySystem(planetRepo, planetCache);
+    const listPlanetsBySystem = new ListPlanetsBySystem(
+      planetRepo,
+      planetCache,
+    );
     const changePlanetName = new ChangePlanetName(
       planetRepo,
       systemRepo,
@@ -520,6 +555,13 @@ async function start(): Promise<void> {
       listMetrics,
       metricsDashboard,
     );
+    const donationController = new DonationController(
+      createDonationCheckout,
+      confirmDonationBySession,
+      cancelDonation,
+      findDonation,
+      listDonations,
+    );
     // Middlewares
     const authMiddleware = new AuthMiddleware(jwtService, {
       issuer: process.env.JWT_ISSUER!,
@@ -546,6 +588,7 @@ async function start(): Promise<void> {
         asteroidController,
         logController,
         metricController,
+        donationController,
         auth: authMiddleware,
         scope: scopeMiddleware,
       }),

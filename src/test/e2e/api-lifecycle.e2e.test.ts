@@ -342,4 +342,42 @@ describe("API E2E - auth, ownership and validation boundaries", () => {
       .expect(200);
     expect(mocks.listMetrics.execute).toHaveBeenCalled();
   });
+
+  test("allows authenticated users to create donation checkout sessions", async () => {
+    const { app, mocks } = buildTestApi();
+    const response = await request(app)
+      .post("/api/v1/donations/checkout")
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({
+        donationType: "monthly",
+        amountMinor: 999,
+        currency: "USD",
+        successUrl: "https://app.local/success",
+        cancelUrl: "https://app.local/cancel",
+      })
+      .expect(201);
+
+    expect(mocks.createDonationCheckout.execute).toHaveBeenCalled();
+    expect(response.body.sessionId).toBeDefined();
+  });
+
+  test("forbids non-owner donation access", async () => {
+    const { app } = buildTestApi();
+    await request(app)
+      .get("/api/v1/donations/dddddddd-dddd-4ddd-8ddd-dddddddddddd")
+      .set("Authorization", makeAuthHeader(IDS.userB, "User"))
+      .expect(403);
+  });
+
+  test("allows owner to confirm donation session", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .post("/api/v1/donations/checkout/cs_test_mock/confirm")
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .expect(204);
+
+    expect(mocks.confirmDonationBySession.execute).toHaveBeenCalledWith(
+      "cs_test_mock",
+    );
+  });
 });

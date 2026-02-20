@@ -12,6 +12,7 @@ import { MoonController } from "../../presentation/controllers/Moon.controller";
 import { AsteroidController } from "../../presentation/controllers/Asteroid.controller";
 import { LogController } from "../../presentation/controllers/Log.controller";
 import { MetricController } from "../../presentation/controllers/Metric.controller";
+import { DonationController } from "../../presentation/controllers/Donation.controller";
 import { IJWT, JwtClaims } from "../../app/interfaces/Jwt.port";
 
 export const IDS = {
@@ -313,6 +314,36 @@ export function buildTestApi(): {
         recentFailures: [],
       })),
     },
+    createDonationCheckout: {
+      execute: jest.fn(async () => ({
+        checkoutUrl: "https://checkout.stripe.com/pay/mock",
+        donationId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        sessionId: "cs_test_mock",
+      })),
+    },
+    confirmDonationBySession: {
+      execute: jest.fn(async () => undefined),
+    },
+    cancelDonation: {
+      execute: jest.fn(async () => undefined),
+    },
+    findDonation: {
+      byId: jest.fn(async (id: string) => ({
+        id,
+        userId: IDS.userA,
+        donationType: "monthly",
+        status: "active",
+      })),
+      byProviderSessionId: jest.fn(async () => ({
+        id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        userId: IDS.userA,
+        donationType: "monthly",
+        status: "pending",
+      })),
+    },
+    listDonations: {
+      execute: jest.fn(async () => ({ rows: [], total: 0 })),
+    },
   } as const;
 
   const userController = new UserController(
@@ -396,6 +427,13 @@ export function buildTestApi(): {
     mocks.listMetrics as any,
     mocks.dashboardMetrics as any,
   );
+  const donationController = new DonationController(
+    mocks.createDonationCheckout as any,
+    mocks.confirmDonationBySession as any,
+    mocks.cancelDonation as any,
+    mocks.findDonation as any,
+    mocks.listDonations as any,
+  );
 
   const app = Express();
   app.use(Express.json());
@@ -413,6 +451,7 @@ export function buildTestApi(): {
       asteroidController,
       logController,
       metricController,
+      donationController,
       auth,
       scope,
     }),

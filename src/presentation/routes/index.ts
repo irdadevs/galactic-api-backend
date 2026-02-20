@@ -9,6 +9,7 @@ import { MoonController } from "../controllers/Moon.controller";
 import { AsteroidController } from "../controllers/Asteroid.controller";
 import { LogController } from "../controllers/Log.controller";
 import { MetricController } from "../controllers/Metric.controller";
+import { DonationController } from "../controllers/Donation.controller";
 import { UserRoutes } from "./User.routes";
 import { GalaxyRoutes } from "./Galaxy.routes";
 import { SystemRoutes } from "./System.routes";
@@ -18,6 +19,7 @@ import { MoonRoutes } from "./Moon.routes";
 import { AsteroidRoutes } from "./Asteroid.routes";
 import { LogRoutes } from "./Log.routes";
 import { MetricRoutes } from "./Metric.routes";
+import { DonationRoutes } from "./Donation.routes";
 import { AuthMiddleware } from "../middlewares/Auth.middleware";
 import { ScopeMiddleware } from "../middlewares/Scope.middleware.ts";
 
@@ -58,6 +60,7 @@ export function buildApiRouter(deps: {
   asteroidController: AsteroidController;
   logController: LogController;
   metricController: MetricController;
+  donationController: DonationController;
   auth: AuthMiddleware;
   scope: ScopeMiddleware;
 }): Router {
@@ -109,6 +112,11 @@ export function buildApiRouter(deps: {
     router,
     `${base}/metrics`,
     MetricRoutes(deps.metricController, deps.auth, deps.scope),
+  );
+  registerRoutes(
+    router,
+    `${base}/donations`,
+    DonationRoutes(deps.donationController, deps.auth, deps.scope),
   );
 
   return router;
