@@ -15,6 +15,8 @@ export type UserProps = {
   verifiedAt: Date | null;
   isDeleted: boolean;
   isArchived: boolean;
+  isSupporter: boolean;
+  supporterFrom: Date | null;
   role: Role;
   deletedAt: Date | null;
   archivedAt: Date | null;
@@ -33,6 +35,8 @@ export type UserCreateProps = {
   verifiedAt?: Date | null;
   isDeleted?: boolean;
   isArchived?: boolean;
+  isSupporter?: boolean;
+  supporterFrom?: Date | null;
   deletedAt?: Date | null;
   archivedAt?: Date | null;
   lastActivityAt?: Date;
@@ -51,6 +55,8 @@ export type UserDTO = {
   verified_at: Date | null;
   is_deleted: boolean;
   is_archived: boolean;
+  is_supporter: boolean;
+  supporter_from: Date | null;
   deleted_at: Date | null;
   archived_at: Date | null;
   last_activity_at: Date;
@@ -187,6 +193,8 @@ export class User {
       verifiedAt: input.verifiedAt ?? null,
       isDeleted: input.isDeleted ?? false,
       isArchived: input.isArchived ?? false,
+      isSupporter: input.isSupporter ?? false,
+      supporterFrom: input.supporterFrom ?? null,
       createdAt: input.createdAt ?? now,
       deletedAt: input.deletedAt ?? null,
       archivedAt: input.archivedAt ?? null,
@@ -208,6 +216,8 @@ export class User {
     verifiedAt: Date | null;
     isDeleted: boolean;
     isArchived: boolean;
+    isSupporter: boolean;
+    supporterFrom: Date | null;
     deletedAt: Date | null;
     archivedAt: Date | null;
     lastActivityAt: Date;
@@ -225,6 +235,8 @@ export class User {
       verifiedAt: props.verifiedAt,
       isDeleted: props.isDeleted,
       isArchived: props.isArchived,
+      isSupporter: props.isSupporter,
+      supporterFrom: props.supporterFrom,
       createdAt: props.createdAt,
       deletedAt: props.deletedAt,
       archivedAt: props.archivedAt,
@@ -279,6 +291,14 @@ export class User {
 
   get archivedAt(): Date | null {
     return this.props.archivedAt;
+  }
+
+  get isSupporter(): boolean {
+    return this.props.isSupporter;
+  }
+
+  get supporterFrom(): Date | null {
+    return this.props.supporterFrom;
   }
 
   get lastActivityAt(): Date {
@@ -387,6 +407,13 @@ export class User {
     this.props.lastActivityAt = at ?? new Date();
   }
 
+  markSupporter(from?: Date): void {
+    this.props.isSupporter = true;
+    if (!this.props.supporterFrom) {
+      this.props.supporterFrom = from ?? new Date();
+    }
+  }
+
   touchActivity(at?: Date): void {
     this.props.lastActivityAt = at ?? new Date();
   }
@@ -402,6 +429,8 @@ export class User {
     verifiedAt: Date | null;
     isDeleted: boolean;
     isArchived: boolean;
+    isSupporter: boolean;
+    supporterFrom: Date | null;
     deletedAt: Date | null;
     archivedAt: Date | null;
     lastActivityAt: Date;
@@ -419,6 +448,8 @@ export class User {
       verifiedAt: this.verifiedAt,
       isDeleted: this.isDeleted,
       isArchived: this.isArchived,
+      isSupporter: this.isSupporter,
+      supporterFrom: this.supporterFrom,
       deletedAt: this.deletedAt,
       archivedAt: this.archivedAt,
       lastActivityAt: this.lastActivityAt,
@@ -439,6 +470,8 @@ export class User {
       verified_at: this.verifiedAt,
       is_deleted: this.isDeleted,
       is_archived: this.isArchived,
+      is_supporter: this.isSupporter,
+      supporter_from: this.supporterFrom,
       deleted_at: this.deletedAt,
       archived_at: this.archivedAt,
       last_activity_at: this.lastActivityAt,

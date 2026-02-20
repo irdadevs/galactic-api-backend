@@ -18,6 +18,7 @@ export interface IGalaxy {
   save(galaxy: Galaxy): Promise<Galaxy>;
   findById(id: Uuid): Promise<Galaxy | null>;
   findByOwner(ownerId: Uuid): Promise<Galaxy | null>;
+  countByOwner(ownerId: Uuid): Promise<number>;
   findByName(name: GalaxyName): Promise<Galaxy | null>;
   findByShape(shape: GalaxyShape): Promise<Galaxy | null>;
   list(query: ListGalaxyQuery): Promise<{ rows: Galaxy[]; total: number }>;

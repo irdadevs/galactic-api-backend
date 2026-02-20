@@ -1,13 +1,18 @@
 import { ErrorFactory } from "../../../../utils/errors/Error.map";
+import { Uuid } from "../../../../domain/aggregates/User";
+import { UserCacheService } from "../../../app-services/users/UserCache.service";
 import { DonationCacheService } from "../../../app-services/donations/DonationCache.service";
 import { IDonation } from "../../../interfaces/Donation.port";
 import { IPaymentGateway } from "../../../interfaces/PaymentGateway.port";
+import { IUser } from "../../../interfaces/User.port";
 
 export class ConfirmDonationBySession {
   constructor(
     private readonly donationRepo: IDonation,
     private readonly paymentGateway: IPaymentGateway,
     private readonly donationCache: DonationCacheService,
+    private readonly userRepo: IUser,
+    private readonly userCache?: UserCacheService,
   ) {}
 
   async execute(sessionId: string): Promise<void> {
@@ -41,5 +46,16 @@ export class ConfirmDonationBySession {
 
     const saved = await this.donationRepo.save(donation);
     await this.donationCache.invalidateForMutation(saved);
+
+    if (saved.status === "active" || saved.status === "completed") {
+      const user = await this.userRepo.findById(Uuid.create(saved.userId));
+      if (user && !user.isSupporter) {
+        user.markSupporter();
+        const savedUser = await this.userRepo.save(user);
+        if (this.userCache) {
+          await this.userCache.setUser(savedUser);
+        }
+      }
+    }
   }
 }

@@ -80,6 +80,14 @@ export default class GalaxyRepo implements IGalaxy {
     return this.findOneBy("WHERE owner_id = $1", [ownerId.toString()]);
   }
 
+  async countByOwner(ownerId: Uuid): Promise<number> {
+    const query = await this.db.query<{ total: number }>(
+      `SELECT COUNT(*)::int AS total FROM procedurals.galaxies WHERE owner_id = $1`,
+      [ownerId.toString()],
+    );
+    return Number(query.rows[0]?.total ?? 0);
+  }
+
   async findByName(name: GalaxyName): Promise<Galaxy | null> {
     return this.findOneBy("WHERE name = $1", [name.toString()]);
   }

@@ -21,6 +21,8 @@ CREATE TABLE
         verified_at timestamptz NULL,
         is_archived boolean NOT NULL DEFAULT false,
         archived_at timestamptz NULL,
+        is_supporter boolean NOT NULL DEFAULT false,
+        supporter_from timestamptz NULL,
         last_activity_at timestamptz NOT NULL DEFAULT now_utc (),
         created_at timestamptz NOT NULL DEFAULT now_utc (),
         updated_at timestamptz NOT NULL DEFAULT now_utc ()
@@ -30,6 +32,7 @@ CREATE TABLE
 CREATE INDEX IF NOT EXISTS idx_players_is_verified ON auth.users (is_verified);
 CREATE INDEX IF NOT EXISTS idx_users_last_activity ON auth.users (last_activity_at);
 CREATE INDEX IF NOT EXISTS idx_users_archived ON auth.users (is_archived);
+CREATE INDEX IF NOT EXISTS idx_users_supporter ON auth.users (is_supporter);
 
 -- === User <-> Roles ===
 CREATE TABLE

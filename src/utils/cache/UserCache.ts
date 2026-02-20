@@ -13,6 +13,8 @@ export type CachedUser = {
   verifiedAt: string | null;
   isDeleted: boolean;
   isArchived: boolean;
+  isSupporter: boolean;
+  supporterFrom: string | null;
   deletedAt: string | null;
   archivedAt: string | null;
   lastActivityAt: string;
@@ -59,6 +61,7 @@ export function serializeUserForCache(user: User): CachedUser {
   const json = user.toJSON();
   return {
     ...json,
+    supporterFrom: json.supporterFrom ? json.supporterFrom.toISOString() : null,
     verificationCodeExpiresAt: json.verificationCodeExpiresAt
       ? json.verificationCodeExpiresAt.toISOString()
       : null,
@@ -84,6 +87,8 @@ export function deserializeUserFromCache(cached: CachedUser): User {
     verifiedAt: cached.verifiedAt ? new Date(cached.verifiedAt) : null,
     isDeleted: cached.isDeleted,
     isArchived: cached.isArchived,
+    isSupporter: cached.isSupporter,
+    supporterFrom: cached.supporterFrom ? new Date(cached.supporterFrom) : null,
     deletedAt: cached.deletedAt ? new Date(cached.deletedAt) : null,
     archivedAt: cached.archivedAt ? new Date(cached.archivedAt) : null,
     lastActivityAt: new Date(cached.lastActivityAt),

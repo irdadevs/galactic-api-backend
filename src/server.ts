@@ -257,6 +257,8 @@ async function start(): Promise<void> {
       donationRepo,
       paymentGateway,
       donationCache,
+      userRepo,
+      userCache,
     );
     const cancelDonation = new CancelDonation(
       donationRepo,
@@ -290,6 +292,7 @@ async function start(): Promise<void> {
         moon: (db) => new MoonRepo(db),
         asteroid: (db) => new AsteroidRepo(db),
       },
+      (db) => new UserRepo(db),
       galaxyLifecycle,
       galaxyCache,
       systemCache,

@@ -2,18 +2,22 @@ import { Galaxy, GalaxyName } from "../../../../domain/aggregates/Galaxy";
 import { CreateGalaxyDTO } from "../../../../presentation/security/galaxies/CreateGalaxy.dto";
 import { ErrorFactory } from "../../../../utils/errors/Error.map";
 import { UnitOfWorkFactory } from "../../../../config/db/UnitOfWork";
+import { Queryable } from "../../../../config/db/Queryable";
+import { Uuid } from "../../../../domain/aggregates/User";
 import { GalaxyCacheService } from "../../../app-services/galaxies/GalaxyCache.service";
 import { SystemCacheService } from "../../../app-services/systems/SystemCache.service";
 import {
   GalaxyLifecycleService,
   ProceduralRepoFactories,
 } from "../../../app-services/galaxies/GalaxyLifecycle.service";
+import { IUser } from "../../../interfaces/User.port";
 import { TrackMetric } from "../metrics/TrackMetric.command";
 
 export class CreateGalaxy {
   constructor(
     private readonly uowFactory: UnitOfWorkFactory,
     private readonly repoFactories: ProceduralRepoFactories,
+    private readonly userRepoFactory: (db: Queryable) => IUser,
     private readonly lifecycle: GalaxyLifecycleService,
     private readonly galaxyCache: GalaxyCacheService,
     private readonly systemCache: SystemCacheService,
@@ -32,6 +36,7 @@ export class CreateGalaxy {
         moon: this.repoFactories.moon(uow.db),
         asteroid: this.repoFactories.asteroid(uow.db),
       };
+      const userRepo = this.userRepoFactory(uow.db);
 
       const existingGalaxyName = await repos.galaxy.findByName(
         GalaxyName.create(dto.name),
@@ -41,6 +46,24 @@ export class CreateGalaxy {
         throw ErrorFactory.presentation("GALAXY.NAME_ALREADY_EXIST", {
           name: dto.name,
         });
+      }
+
+      const owner = await userRepo.findById(Uuid.create(dto.ownerId));
+      if (!owner) {
+        throw ErrorFactory.presentation("SHARED.NOT_FOUND", {
+          sourceType: "user",
+          id: dto.ownerId,
+        });
+      }
+
+      const canCreateInfinite = owner.role === "Admin" || owner.isSupporter;
+      if (!canCreateInfinite) {
+        const currentCount = await repos.galaxy.countByOwner(Uuid.create(dto.ownerId));
+        if (currentCount >= 3) {
+          throw ErrorFactory.presentation("PRESENTATION.INVALID_FIELD", {
+            field: "galaxyLimit.nonSupporterMax3",
+          });
+        }
       }
 
       const galaxy = Galaxy.create({

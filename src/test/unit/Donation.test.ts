@@ -176,14 +176,33 @@ describe("Donation commands", () => {
     const cache = {
       invalidateForMutation: invalidateSpy,
     } as unknown as DonationCacheService;
+    const user = {
+      isSupporter: false,
+      markSupporter: jest.fn<void, []>(() => undefined),
+    };
+    const userRepo = {
+      findById: jest.fn<Promise<typeof user>, []>(async () => user),
+      save: jest.fn<Promise<typeof user>, [unknown]>(async () => user),
+    };
+    const userCache = {
+      setUser: jest.fn<Promise<void>, [unknown]>(async () => undefined),
+    };
 
-    const command = new ConfirmDonationBySession(repo, gateway, cache);
+    const command = new ConfirmDonationBySession(
+      repo,
+      gateway,
+      cache,
+      userRepo as any,
+      userCache as any,
+    );
     await command.execute("cs_monthly");
 
     expect(donation.status).toBe("active");
     expect(donation.providerSubscriptionId).toBe("sub_123");
     expect(saveSpy).toHaveBeenCalledTimes(1);
     expect(invalidateSpy).toHaveBeenCalledTimes(1);
+    expect(user.markSupporter).toHaveBeenCalledTimes(1);
+    expect(userRepo.save).toHaveBeenCalledTimes(1);
   });
 
   it("cancels active monthly donation", async () => {

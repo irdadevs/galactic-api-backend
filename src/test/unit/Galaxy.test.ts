@@ -1,4 +1,7 @@
+import { GalaxyLifecycleService } from "../../app/app-services/galaxies/GalaxyLifecycle.service";
+import { CreateGalaxy } from "../../app/use-cases/commands/galaxies/CreateGalaxy.command";
 import { Galaxy, GalaxyShapeValue } from "../../domain/aggregates/Galaxy";
+import { User } from "../../domain/aggregates/User";
 
 const validInput = {
   ownerId: "11111111-1111-4111-8111-111111111111",
@@ -168,5 +171,136 @@ describe("Galaxy aggregate", () => {
       system_count: galaxy.systemCount,
       created_at: galaxy.createdAt,
     });
+  });
+});
+
+describe("CreateGalaxy command - supporter limit", () => {
+  const makeDeps = (owner: User, ownerGalaxyCount: number) => {
+    const uow = {
+      db: {} as any,
+      commit: jest.fn(async () => undefined),
+      rollback: jest.fn(async () => undefined),
+    };
+
+    const galaxyRepo = {
+      findByName: jest.fn(async () => null),
+      countByOwner: jest.fn(async () => ownerGalaxyCount),
+    };
+
+    const userRepo = {
+      findById: jest.fn(async () => owner),
+    };
+
+    const lifecycle = {
+      createGalaxyTree: jest.fn(async (galaxy) => []),
+    } as unknown as GalaxyLifecycleService;
+
+    const command = new CreateGalaxy(
+      {
+        start: async () => uow,
+      },
+      {
+        galaxy: () => galaxyRepo as any,
+        system: () => ({}) as any,
+        star: () => ({}) as any,
+        planet: () => ({}) as any,
+        moon: () => ({}) as any,
+        asteroid: () => ({}) as any,
+      },
+      () => userRepo as any,
+      lifecycle,
+      {
+        setGalaxy: jest.fn(async () => undefined),
+        invalidateList: jest.fn(async () => undefined),
+      } as any,
+      {
+        setSystem: jest.fn(async () => undefined),
+        invalidateListByGalaxy: jest.fn(async () => undefined),
+      } as any,
+    );
+
+    return {
+      command,
+      uow,
+      galaxyRepo,
+      lifecycle,
+    };
+  };
+
+  it("rejects non-supporter non-admin owner with 3 galaxies", async () => {
+    const owner = User.create({
+      id: "11111111-1111-4111-8111-111111111111",
+      email: "user@test.com",
+      passwordHash: "hashed-password-123",
+      username: "user_limit",
+      role: "User",
+      isSupporter: false,
+    });
+
+    const { command, uow, lifecycle } = makeDeps(owner, 3);
+
+    await expect(
+      command.execute({
+        ownerId: owner.id,
+        name: "OrionX",
+        shape: "spherical",
+        systemCount: 3,
+      }),
+    ).rejects.toMatchObject({ code: "PRESENTATION.INVALID_FIELD" });
+
+    expect(lifecycle.createGalaxyTree).not.toHaveBeenCalled();
+    expect(uow.commit).not.toHaveBeenCalled();
+    expect(uow.rollback).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows supporter owner with 3 galaxies", async () => {
+    const owner = User.create({
+      id: "22222222-2222-4222-8222-222222222222",
+      email: "supporter@test.com",
+      passwordHash: "hashed-password-123",
+      username: "supporter_user",
+      role: "User",
+      isSupporter: true,
+      supporterFrom: new Date("2026-02-20T00:00:00.000Z"),
+    });
+
+    const { command, uow, lifecycle } = makeDeps(owner, 3);
+
+    await expect(
+      command.execute({
+        ownerId: owner.id,
+        name: "Pegasus",
+        shape: "spherical",
+        systemCount: 3,
+      }),
+    ).resolves.toBeDefined();
+
+    expect(lifecycle.createGalaxyTree).toHaveBeenCalledTimes(1);
+    expect(uow.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows admin owner with 3 galaxies", async () => {
+    const owner = User.create({
+      id: "33333333-3333-4333-8333-333333333333",
+      email: "admin@test.com",
+      passwordHash: "hashed-password-123",
+      username: "admin_user",
+      role: "Admin",
+      isSupporter: false,
+    });
+
+    const { command, uow, lifecycle } = makeDeps(owner, 3);
+
+    await expect(
+      command.execute({
+        ownerId: owner.id,
+        name: "HydraX",
+        shape: "spherical",
+        systemCount: 3,
+      }),
+    ).resolves.toBeDefined();
+
+    expect(lifecycle.createGalaxyTree).toHaveBeenCalledTimes(1);
+    expect(uow.commit).toHaveBeenCalledTimes(1);
   });
 });
