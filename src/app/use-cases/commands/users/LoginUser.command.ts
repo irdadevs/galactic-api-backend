@@ -11,6 +11,7 @@ export class LoginUser {
   ) {}
 
   async execute(dto: LoginDTO): Promise<User> {
+    await this.repo.archiveInactive(90);
     const exist = await this.repo.findByEmail(Email.create(dto.email));
 
     const passwordHash = exist?.passwordHash ?? "$2b$10$invalidhashforcompare";
@@ -21,6 +22,10 @@ export class LoginUser {
     );
 
     if (!exist || !comparedPass) {
+      throw ErrorFactory.presentation("AUTH.INVALID_CREDENTIALS");
+    }
+
+    if (exist.isArchived) {
       throw ErrorFactory.presentation("AUTH.INVALID_CREDENTIALS");
     }
 

@@ -431,6 +431,7 @@ async function start(): Promise<void> {
       sessionRepo,
       jwtService,
       hasher,
+      userRepo,
     );
     const platformService = new PlatformService(
       signupUser,

@@ -29,4 +29,8 @@ export interface IUser {
   verify(email: Email): Promise<void>;
   softDelete(id: Uuid, at?: Date): Promise<void>;
   restore(id: Uuid, at?: Date): Promise<void>;
+  touchActivity(id: Uuid, at?: Date): Promise<void>;
+  archiveInactive(days?: number): Promise<
+    Array<{ id: string; email: string; username: string }>
+  >;
 }

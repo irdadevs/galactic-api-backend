@@ -33,7 +33,10 @@ describe("User aggregate", () => {
     expect(user.verificationCodeExpiresAt).toBeNull();
     expect(user.verifiedAt).toBeNull();
     expect(user.isDeleted).toBe(false);
+    expect(user.isArchived).toBe(false);
     expect(user.deletedAt).toBeNull();
+    expect(user.archivedAt).toBeNull();
+    expect(user.lastActivityAt).toBeInstanceOf(Date);
     expect(user.role).toBe("User");
     expect(user.createdAt).toBeInstanceOf(Date);
   });
@@ -61,7 +64,9 @@ describe("User aggregate", () => {
     );
     expect(user.verifiedAt?.toISOString()).toBe("2025-01-01T12:00:00.000Z");
     expect(user.isDeleted).toBe(true);
+    expect(user.isArchived).toBe(false);
     expect(user.deletedAt?.toISOString()).toBe("2025-01-02T00:00:00.000Z");
+    expect(user.archivedAt).toBeNull();
     expect(user.createdAt.toISOString()).toBe("2025-01-01T00:00:00.000Z");
   });
 
@@ -226,6 +231,23 @@ describe("User aggregate", () => {
     expect(user.deletedAt).toBeNull();
   });
 
+  it("archives user and keeps deleted=true", () => {
+    const user = User.create(validInput);
+
+    user.archive(new Date("2025-01-04T00:00:00.000Z"));
+
+    expect(user.isArchived).toBe(true);
+    expect(user.archivedAt?.toISOString()).toBe("2025-01-04T00:00:00.000Z");
+    expect(user.isDeleted).toBe(true);
+    expect(user.deletedAt?.toISOString()).toBe("2025-01-04T00:00:00.000Z");
+  });
+
+  it("touches activity timestamp", () => {
+    const user = User.create(validInput);
+    user.touchActivity(new Date("2025-01-05T00:00:00.000Z"));
+    expect(user.lastActivityAt.toISOString()).toBe("2025-01-05T00:00:00.000Z");
+  });
+
   it("rehydrates from persistence data", () => {
     const user = User.rehydrate({
       id: "22222222-2222-4222-8222-222222222222",
@@ -237,7 +259,10 @@ describe("User aggregate", () => {
       verificationCodeExpiresAt: null,
       verifiedAt: new Date("2024-06-01T12:00:00.000Z"),
       isDeleted: true,
+      isArchived: true,
       deletedAt: new Date("2024-06-02T10:00:00.000Z"),
+      archivedAt: new Date("2024-06-03T10:00:00.000Z"),
+      lastActivityAt: new Date("2024-06-04T10:00:00.000Z"),
       createdAt: new Date("2024-06-01T10:00:00.000Z"),
       role: "User",
     });
@@ -251,7 +276,12 @@ describe("User aggregate", () => {
     expect(user.verificationCode).toBeNull();
     expect(user.verificationCodeExpiresAt).toBeNull();
     expect(user.isDeleted).toBe(true);
+    expect(user.isArchived).toBe(true);
     expect(user.deletedAt?.toISOString()).toBe("2024-06-02T10:00:00.000Z");
+    expect(user.archivedAt?.toISOString()).toBe("2024-06-03T10:00:00.000Z");
+    expect(user.lastActivityAt?.toISOString()).toBe(
+      "2024-06-04T10:00:00.000Z",
+    );
     expect(user.role).toBe("User");
   });
 
@@ -270,7 +300,10 @@ describe("User aggregate", () => {
       verification_code_expires_at: user.verificationCodeExpiresAt,
       verified_at: user.verifiedAt,
       is_deleted: user.isDeleted,
+      is_archived: user.isArchived,
       deleted_at: user.deletedAt,
+      archived_at: user.archivedAt,
+      last_activity_at: user.lastActivityAt,
       created_at: user.createdAt,
       role: user.role,
     });

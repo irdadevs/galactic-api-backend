@@ -25,7 +25,10 @@ export default class UserRepo implements IUser {
       verificationCodeExpiresAt: row.verification_code_expires_at ?? null,
       verifiedAt: row.verified_at ?? null,
       isDeleted: row.is_deleted,
+      isArchived: row.is_archived ?? false,
       deletedAt: row.deleted_at ?? null,
+      archivedAt: row.archived_at ?? null,
+      lastActivityAt: row.last_activity_at ?? row.updated_at ?? row.created_at,
       createdAt: row.created_at,
       role: (row.role ?? "User") as UserRole,
     });
@@ -46,7 +49,10 @@ export default class UserRepo implements IUser {
         u.verification_code_expires_at,
         u.verified_at,
         u.is_deleted,
+        u.is_archived,
         u.deleted_at,
+        u.archived_at,
+        u.last_activity_at,
         u.created_at,
         r.key AS role
       FROM auth.users u
@@ -140,11 +146,14 @@ export default class UserRepo implements IUser {
         verification_code_expires_at,
         verified_at,
         is_deleted,
+        is_archived,
         deleted_at,
+        archived_at,
+        last_activity_at,
         created_at,
         updated_at
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, now_utc())
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14, now_utc())
       `,
         [
           id,
@@ -156,7 +165,10 @@ export default class UserRepo implements IUser {
           user.verificationCodeExpiresAt,
           user.verifiedAt,
           user.isDeleted ?? false,
+          user.isArchived ?? false,
           user.deletedAt ?? null,
+          user.archivedAt ?? null,
+          user.lastActivityAt,
           user.createdAt,
         ],
       );
@@ -177,7 +189,10 @@ export default class UserRepo implements IUser {
         verification_code_expires_at = $7,
         verified_at = $8,
         is_deleted = $9,
-        deleted_at = $10,
+        is_archived = $10,
+        deleted_at = $11,
+        archived_at = $12,
+        last_activity_at = $13,
         updated_at = now_utc()
       WHERE id = $1
       `,
@@ -191,7 +206,10 @@ export default class UserRepo implements IUser {
           user.verificationCodeExpiresAt,
           user.verifiedAt,
           user.isDeleted ?? false,
+          user.isArchived ?? false,
           user.deletedAt ?? null,
+          user.archivedAt ?? null,
+          user.lastActivityAt,
         ],
       );
 
@@ -359,7 +377,10 @@ export default class UserRepo implements IUser {
           u.verification_code_expires_at,
           u.verified_at,
           u.is_deleted,
+          u.is_archived,
           u.deleted_at,
+          u.archived_at,
+          u.last_activity_at,
           u.created_at,
           r.key AS role
         `,
@@ -406,13 +427,14 @@ export default class UserRepo implements IUser {
     }
   }
 
-  async restore(id: Uuid, at?: Date): Promise<void> {
+  async restore(id: Uuid, _at?: Date): Promise<void> {
     const res = await this.db.query(
       `UPDATE auth.users
        SET is_deleted = false,
            deleted_at = NULL,
            updated_at = now_utc()
-       WHERE id = $1`,
+       WHERE id = $1
+         AND COALESCE(is_archived, false) = false`,
       [id.toString()],
     );
 
@@ -422,5 +444,27 @@ export default class UserRepo implements IUser {
         id: id.toString(),
       });
     }
+  }
+
+  async touchActivity(id: Uuid, at?: Date): Promise<void> {
+    await this.db.query(
+      `SELECT auth_touch_user_activity($1, $2)`,
+      [id.toString(), at ?? null],
+    );
+  }
+
+  async archiveInactive(
+    days = 90,
+  ): Promise<Array<{ id: string; email: string; username: string }>> {
+    const res = await this.db.query<{ id: string; email: string; username: string }>(
+      `SELECT * FROM auth_archive_inactive_users($1)`,
+      [days],
+    );
+
+    return res.rows.map((row) => ({
+      id: row.id,
+      email: row.email,
+      username: row.username,
+    }));
   }
 }

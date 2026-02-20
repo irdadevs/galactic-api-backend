@@ -136,4 +136,21 @@ export class UserCacheService {
       return;
     }
   }
+
+  async invalidateBySnapshot(input: {
+    id: string;
+    email: string;
+    username: string;
+  }): Promise<void> {
+    try {
+      await this.cache.delMany([
+        UserCacheKeys.byId(input.id),
+        UserCacheKeys.byEmail(input.email),
+        UserCacheKeys.byUsername(input.username),
+      ]);
+      await this.cache.delByPrefix(UserCacheKeys.listPrefix());
+    } catch {
+      return;
+    }
+  }
 }

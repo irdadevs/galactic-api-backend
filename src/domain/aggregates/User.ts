@@ -14,8 +14,11 @@ export type UserProps = {
   verificationCodeExpiresAt: Date | null;
   verifiedAt: Date | null;
   isDeleted: boolean;
+  isArchived: boolean;
   role: Role;
   deletedAt: Date | null;
+  archivedAt: Date | null;
+  lastActivityAt: Date;
   createdAt: Date;
 };
 
@@ -29,7 +32,10 @@ export type UserCreateProps = {
   verificationCodeExpiresAt?: Date | null;
   verifiedAt?: Date | null;
   isDeleted?: boolean;
+  isArchived?: boolean;
   deletedAt?: Date | null;
+  archivedAt?: Date | null;
+  lastActivityAt?: Date;
   role?: UserRole;
   createdAt?: Date;
 };
@@ -44,7 +50,10 @@ export type UserDTO = {
   verification_code_expires_at: Date | null;
   verified_at: Date | null;
   is_deleted: boolean;
+  is_archived: boolean;
   deleted_at: Date | null;
+  archived_at: Date | null;
+  last_activity_at: Date;
   created_at: Date;
   role: UserRole;
 };
@@ -177,8 +186,11 @@ export class User {
       verificationCodeExpiresAt: input.verificationCodeExpiresAt ?? null,
       verifiedAt: input.verifiedAt ?? null,
       isDeleted: input.isDeleted ?? false,
+      isArchived: input.isArchived ?? false,
       createdAt: input.createdAt ?? now,
       deletedAt: input.deletedAt ?? null,
+      archivedAt: input.archivedAt ?? null,
+      lastActivityAt: input.lastActivityAt ?? now,
       role: Role.create(input.role ?? "User"),
     });
 
@@ -195,7 +207,10 @@ export class User {
     verificationCodeExpiresAt: Date | null;
     verifiedAt: Date | null;
     isDeleted: boolean;
+    isArchived: boolean;
     deletedAt: Date | null;
+    archivedAt: Date | null;
+    lastActivityAt: Date;
     createdAt: Date;
     role: UserRole;
   }): User {
@@ -209,8 +224,11 @@ export class User {
       verificationCodeExpiresAt: props.verificationCodeExpiresAt,
       verifiedAt: props.verifiedAt,
       isDeleted: props.isDeleted,
+      isArchived: props.isArchived,
       createdAt: props.createdAt,
       deletedAt: props.deletedAt,
+      archivedAt: props.archivedAt,
+      lastActivityAt: props.lastActivityAt,
       role: Role.create(props.role),
     });
   }
@@ -253,6 +271,18 @@ export class User {
 
   get deletedAt(): Date | null {
     return this.props.deletedAt;
+  }
+
+  get isArchived(): boolean {
+    return this.props.isArchived;
+  }
+
+  get archivedAt(): Date | null {
+    return this.props.archivedAt;
+  }
+
+  get lastActivityAt(): Date {
+    return this.props.lastActivityAt;
   }
 
   get createdAt(): Date {
@@ -321,12 +351,33 @@ export class User {
     this.props.deletedAt = at ?? new Date();
   }
 
+  archive(at?: Date): void {
+    if (this.props.isArchived) {
+      return;
+    }
+    const when = at ?? new Date();
+    this.props.isArchived = true;
+    this.props.archivedAt = when;
+    this.props.isDeleted = true;
+    this.props.deletedAt = this.props.deletedAt ?? when;
+  }
+
   restore(): void {
+    if (this.props.isArchived) {
+      throw ErrorFactory.domain("USERS.RESTORE_FAILED", {
+        cause: "Archived users can not be restored",
+        userId: this.id,
+      });
+    }
     if (!this.props.isDeleted) {
       return;
     }
     this.props.isDeleted = false;
     this.props.deletedAt = null;
+  }
+
+  touchActivity(at?: Date): void {
+    this.props.lastActivityAt = at ?? new Date();
   }
 
   toJSON(): {
@@ -339,7 +390,10 @@ export class User {
     verificationCodeExpiresAt: Date | null;
     verifiedAt: Date | null;
     isDeleted: boolean;
+    isArchived: boolean;
     deletedAt: Date | null;
+    archivedAt: Date | null;
+    lastActivityAt: Date;
     createdAt: Date;
     role: UserRole;
   } {
@@ -353,7 +407,10 @@ export class User {
       verificationCodeExpiresAt: this.verificationCodeExpiresAt,
       verifiedAt: this.verifiedAt,
       isDeleted: this.isDeleted,
+      isArchived: this.isArchived,
       deletedAt: this.deletedAt,
+      archivedAt: this.archivedAt,
+      lastActivityAt: this.lastActivityAt,
       createdAt: this.createdAt,
       role: this.role,
     };
@@ -370,7 +427,10 @@ export class User {
       verification_code_expires_at: this.verificationCodeExpiresAt,
       verified_at: this.verifiedAt,
       is_deleted: this.isDeleted,
+      is_archived: this.isArchived,
       deleted_at: this.deletedAt,
+      archived_at: this.archivedAt,
+      last_activity_at: this.lastActivityAt,
       created_at: this.createdAt,
       role: this.role,
     };

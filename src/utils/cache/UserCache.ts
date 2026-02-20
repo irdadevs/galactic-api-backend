@@ -12,7 +12,10 @@ export type CachedUser = {
   verificationCodeExpiresAt: string | null;
   verifiedAt: string | null;
   isDeleted: boolean;
+  isArchived: boolean;
   deletedAt: string | null;
+  archivedAt: string | null;
+  lastActivityAt: string;
   createdAt: string;
   role: UserRole;
 };
@@ -61,6 +64,8 @@ export function serializeUserForCache(user: User): CachedUser {
       : null,
     verifiedAt: json.verifiedAt ? json.verifiedAt.toISOString() : null,
     deletedAt: json.deletedAt ? json.deletedAt.toISOString() : null,
+    archivedAt: json.archivedAt ? json.archivedAt.toISOString() : null,
+    lastActivityAt: json.lastActivityAt.toISOString(),
     createdAt: json.createdAt.toISOString(),
   };
 }
@@ -78,7 +83,10 @@ export function deserializeUserFromCache(cached: CachedUser): User {
       : null,
     verifiedAt: cached.verifiedAt ? new Date(cached.verifiedAt) : null,
     isDeleted: cached.isDeleted,
+    isArchived: cached.isArchived,
     deletedAt: cached.deletedAt ? new Date(cached.deletedAt) : null,
+    archivedAt: cached.archivedAt ? new Date(cached.archivedAt) : null,
+    lastActivityAt: new Date(cached.lastActivityAt),
     createdAt: new Date(cached.createdAt),
     role: cached.role,
   });
