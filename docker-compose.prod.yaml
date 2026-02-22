@@ -3,18 +3,18 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: galactic_api
+    image: galactic-api-backend:latest
     restart: unless-stopped
     env_file:
-      - .env
+      - .env.production
     environment:
       NODE_ENV: production
       PORT: 8080
       PGHOST: postgres
       PGPORT: 5432
-      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_password}@redis:6379
-    ports:
-      - "8080:8080"
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+    expose:
+      - "8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,67 +37,53 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    cap_drop:
+      - ALL
+    pids_limit: 300
+    mem_limit: 768m
+    cpus: 1.0
 
   postgres:
     image: postgres:16
-    container_name: galactic_postgres
     restart: unless-stopped
+    env_file:
+      - .env.production
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
   redis:
     image: redis:7
-    container_name: galactic_redis
     restart: unless-stopped
-    command:
-      [
-        "redis-server",
-        "--appendonly",
-        "yes",
-        "--requirepass",
-        "${REDIS_PASSWORD:-redis_dev_password}",
-      ]
-    ports:
-      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    env_file:
+      - .env.production
     volumes:
-      - redis_data:/data
+      - redis_prod_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_dev_password}", "PING"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "PING"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 10s
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: galactic_pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-    ports:
-      - "5050:80"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    profiles:
-      - devtools
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
 
 volumes:
-  postgres_data:
-  redis_data:
-  pgadmin_data:
+  postgres_prod_data:
+  redis_prod_data:

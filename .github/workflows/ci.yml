@@ -35,3 +35,6 @@ jobs:
 
       - name: Test
         run: npm run test -- --runInBand
+
+      - name: Docker build
+        run: docker build -t galactic-api-backend:ci .
