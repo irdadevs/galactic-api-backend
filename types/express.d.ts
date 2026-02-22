@@ -1,6 +1,3 @@
-import { Entitlements } from "../modules/auth/application/services/LoadBusinessEntitlements.service";
-import type { Container } from "../platform/di/Container";
-
 export type AuthUser = {
   userId: string;
   userRole: string;

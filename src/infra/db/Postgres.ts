@@ -23,7 +23,9 @@ export class PgPoolQueryable implements Queryable {
     private readonly pool: Pool,
     private readonly log?: Logger,
     metricTracker?: DbMetricTracker,
-  ) {}
+  ) {
+    this.metricTracker = metricTracker;
+  }
 
   static async connect(
     cfg: PgConfig,
@@ -52,7 +54,7 @@ export class PgPoolQueryable implements Queryable {
           )}`,
         );
         break;
-      } catch (err) {
+      } catch (_err) {
         log?.warn?.(
           `⚠️ ${CONSOLE_COLORS.labelColor("[⚙️DB]")} ${CONSOLE_COLORS.warningColor(
             `connection attempt ${attempt} failed. Retrying...`,
