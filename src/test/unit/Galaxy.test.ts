@@ -92,6 +92,15 @@ describe("Galaxy aggregate", () => {
     expect(galaxy.systemCount).toBe(1);
   });
 
+  it("normalizes system count maximum to 1000", () => {
+    const galaxy = Galaxy.create({
+      ...validInput,
+      systemCount: 1001,
+    });
+
+    expect(galaxy.systemCount).toBe(1000);
+  });
+
   it("renames when different", () => {
     const galaxy = Galaxy.create(validInput);
 
@@ -110,8 +119,7 @@ describe("Galaxy aggregate", () => {
 
   it("changes shape when different", () => {
     const galaxy = Galaxy.create(validInput);
-    const nextShape: GalaxyShapeValue =
-      galaxy.shape === "irregular" ? "spherical" : "irregular";
+    const nextShape: GalaxyShapeValue = galaxy.shape === "irregular" ? "spherical" : "irregular";
 
     galaxy.changeShape(nextShape);
 
@@ -140,6 +148,14 @@ describe("Galaxy aggregate", () => {
     galaxy.changeSystemCount(-5);
 
     expect(galaxy.systemCount).toBe(1);
+  });
+
+  it("normalizes system count maximum on change", () => {
+    const galaxy = Galaxy.create(validInput);
+
+    galaxy.changeSystemCount(1001);
+
+    expect(galaxy.systemCount).toBe(1000);
   });
 
   it("rehydrates from persistence data", () => {
@@ -303,5 +319,31 @@ describe("CreateGalaxy command - supporter limit", () => {
 
     expect(lifecycle.createGalaxyTree).toHaveBeenCalledTimes(1);
     expect(uow.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it("normalizes system count upper bound before lifecycle creation", async () => {
+    const owner = User.create({
+      id: "44444444-4444-4444-8444-444444444444",
+      email: "admin2@test.com",
+      passwordHash: "hashed-password-123",
+      username: "admin_user_2",
+      role: "Admin",
+      isSupporter: false,
+    });
+
+    const { command, lifecycle } = makeDeps(owner, 0);
+
+    await expect(
+      command.execute({
+        ownerId: owner.id,
+        name: "PhoenixX",
+        shape: "spherical",
+        systemCount: 1001,
+      }),
+    ).resolves.toBeDefined();
+
+    expect(lifecycle.createGalaxyTree).toHaveBeenCalledTimes(1);
+    const createdGalaxy = (lifecycle.createGalaxyTree as jest.Mock).mock.calls[0][0] as Galaxy;
+    expect(createdGalaxy.systemCount).toBe(1000);
   });
 });
