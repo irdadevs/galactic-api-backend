@@ -4,4 +4,7 @@ module.exports = {
   testEnvironment: "node",
   testMatch: ["**/*.test.ts"],
   clearMocks: true,
+  moduleNameMapper: {
+    "^chalk$": "<rootDir>/src/test/mocks/chalk.ts",
+  },
 };

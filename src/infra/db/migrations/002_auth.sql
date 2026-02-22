@@ -15,10 +15,13 @@ CREATE TABLE
         -- user info
         email email_addr NOT NULL UNIQUE,
         hashed_password non_empty_text NOT NULL,
+        username non_empty_text NOT NULL UNIQUE CHECK (username ~ '^[[:alnum:]_-]{3,25}$'),
         is_verified boolean NOT NULL DEFAULT false,
         verification_code text NULL,
         verification_code_expires_at timestamptz NULL,
         verified_at timestamptz NULL,
+        is_deleted boolean NOT NULL DEFAULT false,
+        deleted_at timestamptz NULL,
         is_archived boolean NOT NULL DEFAULT false,
         archived_at timestamptz NULL,
         is_supporter boolean NOT NULL DEFAULT false,
@@ -33,6 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_players_is_verified ON auth.users (is_verified);
 CREATE INDEX IF NOT EXISTS idx_users_last_activity ON auth.users (last_activity_at);
 CREATE INDEX IF NOT EXISTS idx_users_archived ON auth.users (is_archived);
 CREATE INDEX IF NOT EXISTS idx_users_supporter ON auth.users (is_supporter);
+CREATE INDEX IF NOT EXISTS idx_users_deleted ON auth.users (is_deleted);
 
 -- === User <-> Roles ===
 CREATE TABLE

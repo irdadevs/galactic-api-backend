@@ -1,5 +1,6 @@
 import { Dice } from "./Dice.class";
 import { nameSyllables } from "./constants";
+import { REGEXP } from "./Regexp";
 
 const pickFrom = <T>(list: readonly T[]): T => {
   const index = Dice.roll(list.length, true);
@@ -33,8 +34,28 @@ export const generateSpecialName = (): string => {
   return formatSpecialName(prefix, value);
 };
 
-export const generateCelestialName = (): string =>
-  rollSpecialThreshold() ? generateSpecialName() : generateSyllableName();
+const MAX_NAME_ATTEMPTS = 30;
+
+function isValidCelestialName(value: string): boolean {
+  const normalized = value.trim();
+  return REGEXP.systemName.test(normalized);
+}
+
+function fallbackName(): string {
+  const value = Dice.roll(999, true) + 1;
+  return `Nova-${String(value).padStart(3, "0")}`;
+}
+
+export const generateCelestialName = (): string => {
+  for (let i = 0; i < MAX_NAME_ATTEMPTS; i += 1) {
+    const candidate = rollSpecialThreshold() ? generateSpecialName() : generateSyllableName();
+    if (isValidCelestialName(candidate)) {
+      return candidate;
+    }
+  }
+
+  return fallbackName();
+};
 
 export const isSpecialName = (value: string): boolean => {
   const match = value.match(/^([A-Z-]+)-(\d{3})$/);

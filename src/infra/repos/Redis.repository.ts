@@ -12,6 +12,7 @@ export type RedisOptions = {
 export class RedisRepo implements ICache {
   private client: RedisClientType;
   private prefix: string;
+  private closed = false;
 
   constructor(opts: RedisOptions = {}) {
     this.client = createClient({
@@ -28,6 +29,9 @@ export class RedisRepo implements ICache {
   }
 
   async connect() {
+    if (this.closed) {
+      throw new Error("Redis client already closed");
+    }
     if (!this.client.isOpen) {
       console.log(
         `🛜 ${CONSOLE_COLORS.labelColor("[⚙️redis]")} ${CONSOLE_COLORS.successColor(`cache client ready.`)}`,
@@ -88,6 +92,7 @@ export class RedisRepo implements ICache {
   }
 
   async close(): Promise<void> {
+    this.closed = true;
     if (this.client.isOpen) {
       console.log(
         `🛜 ${CONSOLE_COLORS.labelColor(
