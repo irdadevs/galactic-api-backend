@@ -53,6 +53,17 @@ describeMocked("API E2E (mocked) - auth, ownership and validation boundaries", (
     );
   });
 
+  test("rejects galaxy creation when systemCount exceeds 1000", async () => {
+    const { app, mocks } = buildTestApi();
+    await request(app)
+      .post("/api/v1/galaxies")
+      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .send({ name: "BoundTest", shape: "spherical", systemCount: 1001 })
+      .expect(400);
+
+    expect(mocks.createGalaxy.execute).not.toHaveBeenCalled();
+  });
+
   test("allows only admin to list users", async () => {
     const { app, mocks } = buildTestApi();
     await request(app)

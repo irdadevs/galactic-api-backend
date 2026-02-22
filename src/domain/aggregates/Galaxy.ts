@@ -30,12 +30,9 @@ export type GalaxyDTO = {
   created_at: Date;
 };
 
-const ALLOWED_GALAXY_SHAPES = [
-  "spherical",
-  "3-arm spiral",
-  "5-arm spiral",
-  "irregular",
-] as const;
+const ALLOWED_GALAXY_SHAPES = ["spherical", "3-arm spiral", "5-arm spiral", "irregular"] as const;
+const MIN_SYSTEM_COUNT = 1;
+const MAX_SYSTEM_COUNT = 1000;
 
 export type GalaxyShapeValue = (typeof ALLOWED_GALAXY_SHAPES)[number];
 
@@ -92,6 +89,10 @@ export class Galaxy {
     this.props = { ...props };
   }
 
+  private static normalizeSystemCount(value: number): number {
+    return Math.min(MAX_SYSTEM_COUNT, Math.max(MIN_SYSTEM_COUNT, value));
+  }
+
   static create(input: GalaxyCreateProps): Galaxy {
     const now = new Date();
 
@@ -101,12 +102,8 @@ export class Galaxy {
       name: GalaxyName.create(input.name),
       shape: input.shape
         ? GalaxyShape.create(input.shape)
-        : GalaxyShape.create(
-            ALLOWED_GALAXY_SHAPES[
-              Dice.roll(ALLOWED_GALAXY_SHAPES.length, true)
-            ],
-          ),
-      systemCount: input.systemCount < 1 ? 1 : input.systemCount,
+        : GalaxyShape.create(ALLOWED_GALAXY_SHAPES[Dice.roll(ALLOWED_GALAXY_SHAPES.length, true)]),
+      systemCount: Galaxy.normalizeSystemCount(input.systemCount),
       createdAt: input.createdAt ?? now,
     });
 
@@ -126,7 +123,7 @@ export class Galaxy {
       ownerId: Uuid.create(props.ownerId),
       name: GalaxyName.create(props.name),
       shape: GalaxyShape.create(props.shape),
-      systemCount: props.systemCount,
+      systemCount: Galaxy.normalizeSystemCount(props.systemCount),
       createdAt: props.createdAt,
     });
   }
@@ -172,7 +169,7 @@ export class Galaxy {
   }
 
   changeSystemCount(value: number): void {
-    const normalized = value < 1 ? 1 : value;
+    const normalized = Galaxy.normalizeSystemCount(value);
     if (normalized === this.props.systemCount) {
       return;
     }
