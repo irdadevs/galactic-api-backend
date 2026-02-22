@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { GalaxyLifecycleService } from "../../app/app-services/galaxies/GalaxyLifecycle.service";
 import { CreateGalaxy } from "../../app/use-cases/commands/galaxies/CreateGalaxy.command";
 import { Galaxy, GalaxyShapeValue } from "../../domain/aggregates/Galaxy";

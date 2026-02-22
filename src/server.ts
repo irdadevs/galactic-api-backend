@@ -119,6 +119,7 @@ import { CancelDonation } from "./app/use-cases/commands/donations/CancelDonatio
 import { FindDonation } from "./app/use-cases/queries/donations/FindDonation.query";
 import { ListDonations } from "./app/use-cases/queries/donations/ListDonations.query";
 import { DbMetricInput } from "./config/db/DbMetrics";
+import { MaintenanceScheduler } from "./infra/jobs/Maintenance.scheduler";
 
 // --------------------
 // Server config
@@ -158,6 +159,7 @@ app.use(morgan(IS_PROD ? "combined" : "dev"));
 let postgres: PgPoolQueryable;
 let uowFactory: PgUnitOfWorkFactory;
 let cache: RedisRepo;
+let maintenanceScheduler: MaintenanceScheduler | undefined;
 
 // --------------------
 // Start server & composition root wiring
@@ -184,6 +186,8 @@ async function start(): Promise<void> {
     cache = new RedisRepo({
       keyPrefix: ENVIRONMENT,
     });
+    maintenanceScheduler = new MaintenanceScheduler(postgres);
+    await maintenanceScheduler.start();
 
     // --------------------
     // 2️⃣ Composition root wiring
@@ -635,6 +639,7 @@ const shutdown = async (signal: string) => {
   );
   try {
     await cache?.close();
+    maintenanceScheduler?.stop();
     await postgres?.close();
     process.exit(0);
   } catch (e) {
