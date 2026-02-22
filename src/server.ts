@@ -2,11 +2,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import Express from "express";
+import { Server } from "http";
 import cors from "cors";
 import morgan from "morgan";
 import compression from "compression";
 import hpp from "hpp";
 import rateLimit from "express-rate-limit";
+import { loadAppEnv } from "./config/AppEnv";
 
 import { PgPoolQueryable } from "./infra/db/Postgres";
 import { PgUnitOfWorkFactory } from "./infra/db/PostgresUoW";
@@ -125,10 +127,9 @@ import { MaintenanceScheduler } from "./infra/jobs/Maintenance.scheduler";
 // Server config
 // --------------------
 const app = Express();
-const PORT = Number(process.env.PORT ?? 8080);
-const ENVIRONMENT = process.env.NODE_ENV ?? "dev";
-const IS_PROD = ENVIRONMENT === "production";
-const CORS_ORIGIN = process.env.CORS_ORIGIN;
+const APP_ENV = loadAppEnv();
+const PORT = APP_ENV.PORT;
+const IS_PROD = APP_ENV.NODE_ENV === "production";
 
 // --------------------
 // Global middlewares
@@ -137,7 +138,7 @@ app.set("trust proxy", 1);
 app.use(Express.json());
 app.use(
   cors({
-    origin: CORS_ORIGIN ? CORS_ORIGIN.split(",").map((x) => x.trim()) : true,
+    origin: APP_ENV.CORS_ORIGINS,
     credentials: true,
   }),
 );
@@ -160,6 +161,40 @@ let postgres: PgPoolQueryable;
 let uowFactory: PgUnitOfWorkFactory;
 let cache: RedisRepo;
 let maintenanceScheduler: MaintenanceScheduler | undefined;
+let httpServer: Server | undefined;
+
+app.get("/healthz", (_req, res) => {
+  return res.status(200).json({
+    ok: true,
+    service: "galactic-api-backend",
+    environment: APP_ENV.NODE_ENV,
+    at: new Date().toISOString(),
+  });
+});
+
+app.get("/readyz", async (_req, res) => {
+  if (!postgres || !cache) {
+    return res.status(503).json({
+      ok: false,
+      reason: "infra_not_initialized",
+    });
+  }
+
+  try {
+    await postgres.ping();
+    await cache.ping();
+    return res.status(200).json({
+      ok: true,
+      dependencies: { db: "up", redis: "up" },
+      at: new Date().toISOString(),
+    });
+  } catch (error) {
+    return res.status(503).json({
+      ok: false,
+      reason: error instanceof Error ? error.message : "dependency_unavailable",
+    });
+  }
+});
 
 // --------------------
 // Start server & composition root wiring
@@ -171,12 +206,11 @@ async function start(): Promise<void> {
     // --------------------
     postgres = await PgPoolQueryable.connect(
       {
-        connectionString: process.env.DATABASE_URL,
-        port: Number(process.env.PGPORT),
-        ssl:
-          process.env.PGSSL === "true" ? { rejectUnauthorized: false } : false,
-        max: Number(process.env.PGMAX ?? 10),
-        idleTimeoutMillis: Number(process.env.PGIDLE_TIMEOUT_MS ?? 10000),
+        connectionString: APP_ENV.DATABASE_URL,
+        port: APP_ENV.PGPORT,
+        ssl: APP_ENV.PGSSL ? { rejectUnauthorized: false } : false,
+        max: APP_ENV.PGMAX,
+        idleTimeoutMillis: APP_ENV.PGIDLE_TIMEOUT_MS,
       },
       console,
     );
@@ -184,7 +218,7 @@ async function start(): Promise<void> {
     uowFactory = new PgUnitOfWorkFactory(postgres._getPool());
 
     cache = new RedisRepo({
-      keyPrefix: ENVIRONMENT,
+      keyPrefix: APP_ENV.NODE_ENV,
     });
     maintenanceScheduler = new MaintenanceScheduler(postgres);
     await maintenanceScheduler.start();
@@ -225,19 +259,9 @@ async function start(): Promise<void> {
     const loginUser = new LoginUser(userRepo, hasher);
     const signupUser = new SignupUser(userRepo, hasher, mailer, userCache);
     const verifyUser = new VerifyUser(userRepo, hasher, userCache);
-    const resendVerificationCode = new ResendVerificationCode(
-      userRepo,
-      hasher,
-      mailer,
-      userCache,
-    );
+    const resendVerificationCode = new ResendVerificationCode(userRepo, hasher, mailer, userCache);
     const changeEmailUser = new ChangeEmail(userRepo, userCache);
-    const changePasswordUser = new ChangePassword(
-      userRepo,
-      hasher,
-      sessionRepo,
-      userCache,
-    );
+    const changePasswordUser = new ChangePassword(userRepo, hasher, sessionRepo, userCache);
     const changeRoleUser = new ChangeRole(userRepo, sessionRepo, userCache);
     const changeUsernameUser = new ChangeUsername(userRepo, userCache);
     const listUsers = new ListUsers(userRepo, userCache);
@@ -264,11 +288,7 @@ async function start(): Promise<void> {
       userRepo,
       userCache,
     );
-    const cancelDonation = new CancelDonation(
-      donationRepo,
-      paymentGateway,
-      donationCache,
-    );
+    const cancelDonation = new CancelDonation(donationRepo, paymentGateway, donationCache);
     const findDonation = new FindDonation(donationRepo, donationCache);
     const listDonations = new ListDonations(donationRepo, donationCache);
     const dbMetricTracker = {
@@ -345,40 +365,14 @@ async function start(): Promise<void> {
       galaxyCache,
     );
     const findSystem = new FindSystem(systemRepo, systemCache);
-    const listSystemsByGalaxy = new ListSystemsByGalaxy(
-      systemRepo,
-      systemCache,
-    );
-    const changeSystemName = new ChangeSystemName(
-      systemRepo,
-      systemCache,
-      galaxyCache,
-    );
-    const changeSystemPosition = new ChangeSystemPosition(
-      systemRepo,
-      systemCache,
-      galaxyCache,
-    );
+    const listSystemsByGalaxy = new ListSystemsByGalaxy(systemRepo, systemCache);
+    const changeSystemName = new ChangeSystemName(systemRepo, systemCache, galaxyCache);
+    const changeSystemPosition = new ChangeSystemPosition(systemRepo, systemCache, galaxyCache);
     const findStar = new FindStar(starRepo, starCache);
     const listStarsBySystem = new ListStarsBySystem(starRepo, starCache);
-    const changeStarName = new ChangeStarName(
-      starRepo,
-      systemRepo,
-      starCache,
-      galaxyCache,
-    );
-    const changeStarMain = new ChangeStarMain(
-      starRepo,
-      systemRepo,
-      starCache,
-      galaxyCache,
-    );
-    const changeStarOrbital = new ChangeStarOrbital(
-      starRepo,
-      systemRepo,
-      starCache,
-      galaxyCache,
-    );
+    const changeStarName = new ChangeStarName(starRepo, systemRepo, starCache, galaxyCache);
+    const changeStarMain = new ChangeStarMain(starRepo, systemRepo, starCache, galaxyCache);
+    const changeStarOrbital = new ChangeStarOrbital(starRepo, systemRepo, starCache, galaxyCache);
     const changeStarStarterOrbital = new ChangeStarStarterOrbital(
       starRepo,
       systemRepo,
@@ -386,16 +380,8 @@ async function start(): Promise<void> {
       galaxyCache,
     );
     const findPlanet = new FindPlanet(planetRepo, planetCache);
-    const listPlanetsBySystem = new ListPlanetsBySystem(
-      planetRepo,
-      planetCache,
-    );
-    const changePlanetName = new ChangePlanetName(
-      planetRepo,
-      systemRepo,
-      planetCache,
-      galaxyCache,
-    );
+    const listPlanetsBySystem = new ListPlanetsBySystem(planetRepo, planetCache);
+    const changePlanetName = new ChangePlanetName(planetRepo, systemRepo, planetCache, galaxyCache);
     const changePlanetOrbital = new ChangePlanetOrbital(
       planetRepo,
       systemRepo,
@@ -432,10 +418,7 @@ async function start(): Promise<void> {
       galaxyCache,
     );
     const findAsteroid = new FindAsteroid(asteroidRepo, asteroidCache);
-    const listAsteroidsBySystem = new ListAsteroidsBySystem(
-      asteroidRepo,
-      asteroidCache,
-    );
+    const listAsteroidsBySystem = new ListAsteroidsBySystem(asteroidRepo, asteroidCache);
     const changeAsteroidName = new ChangeAsteroidName(
       asteroidRepo,
       systemRepo,
@@ -550,12 +533,7 @@ async function start(): Promise<void> {
       findSystem,
       findGalaxy,
     );
-    const logController = new LogController(
-      createLog,
-      resolveLog,
-      findLog,
-      listLogs,
-    );
+    const logController = new LogController(createLog, resolveLog, findLog, listLogs);
     const metricController = new MetricController(
       trackMetric,
       findMetric,
@@ -571,14 +549,12 @@ async function start(): Promise<void> {
     );
     // Middlewares
     const authMiddleware = new AuthMiddleware(jwtService, {
-      issuer: process.env.JWT_ISSUER!,
-      audience: process.env.JWT_AUDIENCE!,
+      issuer: APP_ENV.JWT_ISSUER,
+      audience: APP_ENV.JWT_AUDIENCE,
     });
     const scopeMiddleware = new ScopeMiddleware();
     const requestAuditMiddleware = new RequestAuditMiddleware(createLog);
-    const performanceMetricsMiddleware = new PerformanceMetricsMiddleware(
-      trackMetric,
-    );
+    const performanceMetricsMiddleware = new PerformanceMetricsMiddleware(trackMetric);
 
     app.use(requestAuditMiddleware.bindRequestId());
     app.use(performanceMetricsMiddleware.captureHttpDuration());
@@ -611,7 +587,7 @@ async function start(): Promise<void> {
     // --------------------
     // 3️⃣ Start listening
     // --------------------
-    app.listen(PORT, () => {
+    httpServer = app.listen(PORT, () => {
       console.log(
         `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.successColor(
           `Listening on port ${PORT}`,
@@ -624,6 +600,13 @@ async function start(): Promise<void> {
         `Failed to start: ${e instanceof Error ? e.message : String(e)}`,
       )}`,
     );
+    maintenanceScheduler?.stop();
+    try {
+      await cache?.close();
+    } catch {}
+    try {
+      await postgres?.close();
+    } catch {}
     process.exit(1);
   }
 }
@@ -638,8 +621,13 @@ const shutdown = async (signal: string) => {
     )}`,
   );
   try {
-    await cache?.close();
+    if (httpServer) {
+      await new Promise<void>((resolve, reject) => {
+        httpServer?.close((err?: Error) => (err ? reject(err) : resolve()));
+      });
+    }
     maintenanceScheduler?.stop();
+    await cache?.close();
     await postgres?.close();
     process.exit(0);
   } catch (e) {
@@ -654,6 +642,20 @@ const shutdown = async (signal: string) => {
 
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+process.on("unhandledRejection", (reason: unknown) => {
+  console.error(
+    `${CONSOLE_COLORS.labelColor("[ðŸ›œSERVER]")} ${CONSOLE_COLORS.errorColor(
+      `Unhandled rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
+    )}`,
+  );
+});
+process.on("uncaughtException", (error: Error) => {
+  console.error(
+    `${CONSOLE_COLORS.labelColor("[ðŸ›œSERVER]")} ${CONSOLE_COLORS.errorColor(
+      `Uncaught exception: ${error.message}`,
+    )}`,
+  );
+});
 
 // --------------------
 // Bootstrap

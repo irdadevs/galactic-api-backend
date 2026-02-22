@@ -51,11 +51,7 @@ export class RedisRepo implements ICache {
     }
   }
 
-  async set<T = unknown>(
-    key: string,
-    value: T,
-    ttlSec = DEFAULT_TTL,
-  ): Promise<void> {
+  async set<T = unknown>(key: string, value: T, ttlSec = DEFAULT_TTL): Promise<void> {
     await this.connect();
     await this.client.set(this.k(key), JSON.stringify(value), { EX: ttlSec });
   }
@@ -100,5 +96,10 @@ export class RedisRepo implements ICache {
       );
       await this.client.quit();
     }
+  }
+
+  async ping(): Promise<void> {
+    await this.connect();
+    await this.client.ping();
   }
 }
