@@ -11,10 +11,10 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -23,12 +23,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate
+      - name: Validate code
         run: npm run validate
 
-      - name: Build artifact
+      - name: Build project
+        run: npm run build
+
+      - name: Verify build output
         run: |
-          tar -czf backend-dist.tar.gz dist package.json package-lock.json
+          if [ ! -d "dist" ]; then
+            echo "Error: dist folder not found. Build failed?"
+            exit 1
+          fi
+
+      - name: Package artifact
+        run: tar -czf backend-dist.tar.gz dist package.json package-lock.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
