@@ -8,9 +8,22 @@ export class ListUsers {
     private readonly userCache: UserCacheService,
   ) {}
 
+  private async archiveInactiveAndInvalidate(): Promise<void> {
+    const archived = await this.repo.archiveInactive(90);
+    if (archived.length === 0) return;
+    for (const user of archived) {
+      await this.userCache.invalidateBySnapshot({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+      });
+    }
+  }
+
   async execute(
     query: ListUsersQuery,
   ): Promise<{ rows: User[]; total: number }> {
+    await this.archiveInactiveAndInvalidate();
     const cached = await this.userCache.getList(query);
     if (cached) {
       return cached;

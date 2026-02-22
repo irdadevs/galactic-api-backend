@@ -42,28 +42,33 @@ export class SessionRepo implements ISession {
   }
 
   async findById(id: string): Promise<Session | null> {
-    const { rows } = await this.pool.query(
-      `SELECT * FROM auth.user_sessions WHERE id = $1`,
-      [id],
-    );
+    const { rows } = await this.pool.query(`SELECT * FROM auth.user_sessions WHERE id = $1`, [id]);
 
-    if (!rows[0]) return null;
+    const row = rows[0];
+    if (!row) return null;
 
-    return rows[0];
+    return {
+      id: row.id,
+      userId: row.user_id,
+      refreshTokenHash: row.refresh_token_hash,
+      userAgent: row.user_agent ?? null,
+      ip: row.ip ?? null,
+      isRevoked: row.is_revoked,
+      createdAt: row.created_at,
+      expiresAt: row.expires_at,
+    };
   }
 
   async revoke(sessionId: string): Promise<void> {
-    await this.pool.query(
-      `UPDATE auth.user_sessions SET is_revoked = true WHERE id = $1`,
-      [sessionId],
-    );
+    await this.pool.query(`UPDATE auth.user_sessions SET is_revoked = true WHERE id = $1`, [
+      sessionId,
+    ]);
   }
 
   async revokeAllForUser(userId: string): Promise<void> {
-    await this.pool.query(
-      `UPDATE auth.user_sessions SET is_revoked = true WHERE user_id = $1`,
-      [userId],
-    );
+    await this.pool.query(`UPDATE auth.user_sessions SET is_revoked = true WHERE user_id = $1`, [
+      userId,
+    ]);
   }
 
   async updateRefreshTokenHash(

@@ -1,0 +1,124 @@
+import { Request, Response } from "express";
+import { CreateDonationCheckout } from "../../app/use-cases/commands/donations/CreateDonationCheckout.command";
+import { ConfirmDonationBySession } from "../../app/use-cases/commands/donations/ConfirmDonationBySession.command";
+import { CancelDonation } from "../../app/use-cases/commands/donations/CancelDonation.command";
+import { FindDonation } from "../../app/use-cases/queries/donations/FindDonation.query";
+import { ListDonations } from "../../app/use-cases/queries/donations/ListDonations.query";
+import { CreateDonationCheckoutDTO } from "../security/donations/CreateDonationCheckout.dto";
+import { ConfirmDonationBySessionDTO } from "../security/donations/ConfirmDonationBySession.dto";
+import { FindDonationByIdDTO } from "../security/donations/FindDonationById.dto";
+import { ListDonationsDTO } from "../security/donations/ListDonations.dto";
+import { CancelDonationDTO } from "../security/donations/CancelDonation.dto";
+import invalidBody from "../../utils/invalidBody";
+import errorHandler from "../../utils/errors/Errors.handler";
+
+export class DonationController {
+  constructor(
+    private readonly createDonationCheckout: CreateDonationCheckout,
+    private readonly confirmDonationBySession: ConfirmDonationBySession,
+    private readonly cancelDonation: CancelDonation,
+    private readonly findDonation: FindDonation,
+    private readonly listDonations: ListDonations,
+  ) {}
+
+  private isAdmin(req: Request): boolean {
+    return req.auth.userRole === "Admin";
+  }
+
+  public createCheckout = async (req: Request, res: Response) => {
+    try {
+      const parsed = CreateDonationCheckoutDTO.safeParse(req.body);
+      if (!parsed.success) return invalidBody(res, parsed.error);
+
+      const result = await this.createDonationCheckout.execute({
+        ...parsed.data,
+        userId: req.auth.userId,
+      });
+
+      return res.status(201).json(result);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public confirmBySession = async (req: Request, res: Response) => {
+    try {
+      const parsed = ConfirmDonationBySessionDTO.safeParse(req.params);
+      if (!parsed.success) return invalidBody(res, parsed.error);
+
+      const donation = await this.findDonation.byProviderSessionId(parsed.data.sessionId);
+      if (!donation) {
+        return res.status(404).json({ ok: false, error: "NOT_FOUND" });
+      }
+
+      if (!this.isAdmin(req) && donation.userId !== req.auth.userId) {
+        return res.status(403).json({ ok: false, error: "FORBIDDEN" });
+      }
+
+      await this.confirmDonationBySession.execute(parsed.data.sessionId);
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public cancel = async (req: Request, res: Response) => {
+    try {
+      const parsed = CancelDonationDTO.safeParse(req.params);
+      if (!parsed.success) return invalidBody(res, parsed.error);
+
+      const donation = await this.findDonation.byId(parsed.data.id);
+      if (!donation) {
+        return res.status(404).json({ ok: false, error: "NOT_FOUND" });
+      }
+
+      if (!this.isAdmin(req) && donation.userId !== req.auth.userId) {
+        return res.status(403).json({ ok: false, error: "FORBIDDEN" });
+      }
+
+      await this.cancelDonation.execute(parsed.data.id);
+      return res.status(204).send();
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public findById = async (req: Request, res: Response) => {
+    try {
+      const parsed = FindDonationByIdDTO.safeParse(req.params);
+      if (!parsed.success) return invalidBody(res, parsed.error);
+
+      const donation = await this.findDonation.byId(parsed.data.id);
+      if (!donation) {
+        return res.status(404).json({ ok: false, error: "NOT_FOUND" });
+      }
+
+      if (!this.isAdmin(req) && donation.userId !== req.auth.userId) {
+        return res.status(403).json({ ok: false, error: "FORBIDDEN" });
+      }
+
+      return res.status(200).json(donation);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+
+  public list = async (req: Request, res: Response) => {
+    try {
+      const parsed = ListDonationsDTO.safeParse(req.query);
+      if (!parsed.success) return invalidBody(res, parsed.error);
+
+      const query = this.isAdmin(req)
+        ? parsed.data
+        : {
+          ...parsed.data,
+          userId: req.auth.userId,
+        };
+
+      const result = await this.listDonations.execute(query);
+      return res.status(200).json(result);
+    } catch (err: unknown) {
+      return errorHandler(err, res);
+    }
+  };
+}

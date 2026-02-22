@@ -2,11 +2,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import Express from "express";
+import { Server } from "http";
 import cors from "cors";
 import morgan from "morgan";
 import compression from "compression";
 import hpp from "hpp";
 import rateLimit from "express-rate-limit";
+import { loadAppEnv } from "./config/AppEnv";
 
 import { PgPoolQueryable } from "./infra/db/Postgres";
 import { PgUnitOfWorkFactory } from "./infra/db/PostgresUoW";
@@ -53,6 +55,7 @@ import { AsteroidController } from "./presentation/controllers/Asteroid.controll
 import { LogController } from "./presentation/controllers/Log.controller";
 import { RequestAuditMiddleware } from "./presentation/middlewares/RequestAudit.middleware";
 import { MetricController } from "./presentation/controllers/Metric.controller";
+import { DonationController } from "./presentation/controllers/Donation.controller";
 import { PerformanceMetricsMiddleware } from "./presentation/middlewares/PerformanceMetrics.middleware";
 import FindUser from "./app/use-cases/queries/users/FindUser.query";
 import { HealthQuery } from "./app/use-cases/queries/Health.query";
@@ -104,21 +107,29 @@ import { ResolveLog } from "./app/use-cases/commands/logs/ResolveLog.command";
 import { FindLog } from "./app/use-cases/queries/logs/FindLog.query";
 import { ListLogs } from "./app/use-cases/queries/logs/ListLogs.query";
 import MetricRepo from "./infra/repos/Metric.repository";
+import DonationRepo from "./infra/repos/Donation.repository";
+import { PaymentGatewayRepo } from "./infra/repos/PaymentGateway.repository";
 import { MetricCacheService } from "./app/app-services/metrics/MetricCache.service";
+import { DonationCacheService } from "./app/app-services/donations/DonationCache.service";
 import { TrackMetric } from "./app/use-cases/commands/metrics/TrackMetric.command";
 import { FindMetric } from "./app/use-cases/queries/metrics/FindMetric.query";
 import { ListMetrics } from "./app/use-cases/queries/metrics/ListMetrics.query";
 import { MetricsDashboardQuery } from "./app/use-cases/queries/metrics/MetricsDashboard.query";
+import { CreateDonationCheckout } from "./app/use-cases/commands/donations/CreateDonationCheckout.command";
+import { ConfirmDonationBySession } from "./app/use-cases/commands/donations/ConfirmDonationBySession.command";
+import { CancelDonation } from "./app/use-cases/commands/donations/CancelDonation.command";
+import { FindDonation } from "./app/use-cases/queries/donations/FindDonation.query";
+import { ListDonations } from "./app/use-cases/queries/donations/ListDonations.query";
 import { DbMetricInput } from "./config/db/DbMetrics";
+import { MaintenanceScheduler } from "./infra/jobs/Maintenance.scheduler";
 
 // --------------------
 // Server config
 // --------------------
 const app = Express();
-const PORT = Number(process.env.PORT ?? 8080);
-const ENVIRONMENT = process.env.NODE_ENV ?? "dev";
-const IS_PROD = ENVIRONMENT === "production";
-const CORS_ORIGIN = process.env.CORS_ORIGIN;
+const APP_ENV = loadAppEnv();
+const PORT = APP_ENV.PORT;
+const IS_PROD = APP_ENV.NODE_ENV === "production";
 
 // --------------------
 // Global middlewares
@@ -127,7 +138,7 @@ app.set("trust proxy", 1);
 app.use(Express.json());
 app.use(
   cors({
-    origin: CORS_ORIGIN ? CORS_ORIGIN.split(",").map((x) => x.trim()) : true,
+    origin: APP_ENV.CORS_ORIGINS,
     credentials: true,
   }),
 );
@@ -149,6 +160,41 @@ app.use(morgan(IS_PROD ? "combined" : "dev"));
 let postgres: PgPoolQueryable;
 let uowFactory: PgUnitOfWorkFactory;
 let cache: RedisRepo;
+let maintenanceScheduler: MaintenanceScheduler | undefined;
+let httpServer: Server | undefined;
+
+app.get("/healthz", (_req, res) => {
+  return res.status(200).json({
+    ok: true,
+    service: "galactic-api-backend",
+    environment: APP_ENV.NODE_ENV,
+    at: new Date().toISOString(),
+  });
+});
+
+app.get("/readyz", async (_req, res) => {
+  if (!postgres || !cache) {
+    return res.status(503).json({
+      ok: false,
+      reason: "infra_not_initialized",
+    });
+  }
+
+  try {
+    await postgres.ping();
+    await cache.ping();
+    return res.status(200).json({
+      ok: true,
+      dependencies: { db: "up", redis: "up" },
+      at: new Date().toISOString(),
+    });
+  } catch (error) {
+    return res.status(503).json({
+      ok: false,
+      reason: error instanceof Error ? error.message : "dependency_unavailable",
+    });
+  }
+});
 
 // --------------------
 // Start server & composition root wiring
@@ -160,12 +206,11 @@ async function start(): Promise<void> {
     // --------------------
     postgres = await PgPoolQueryable.connect(
       {
-        connectionString: process.env.DATABASE_URL,
-        port: Number(process.env.PGPORT),
-        ssl:
-          process.env.PGSSL === "true" ? { rejectUnauthorized: false } : false,
-        max: Number(process.env.PGMAX ?? 10),
-        idleTimeoutMillis: Number(process.env.PGIDLE_TIMEOUT_MS ?? 10000),
+        connectionString: APP_ENV.DATABASE_URL,
+        port: APP_ENV.PGPORT,
+        ssl: APP_ENV.PGSSL ? { rejectUnauthorized: false } : false,
+        max: APP_ENV.PGMAX,
+        idleTimeoutMillis: APP_ENV.PGIDLE_TIMEOUT_MS,
       },
       console,
     );
@@ -173,8 +218,10 @@ async function start(): Promise<void> {
     uowFactory = new PgUnitOfWorkFactory(postgres._getPool());
 
     cache = new RedisRepo({
-      keyPrefix: ENVIRONMENT,
+      keyPrefix: APP_ENV.NODE_ENV,
     });
+    maintenanceScheduler = new MaintenanceScheduler(postgres);
+    await maintenanceScheduler.start();
 
     // --------------------
     // 2️⃣ Composition root wiring
@@ -190,6 +237,7 @@ async function start(): Promise<void> {
     const asteroidRepo = new AsteroidRepo(postgres);
     const logRepo = new LogRepo(postgres);
     const metricRepo = new MetricRepo(postgres);
+    const donationRepo = new DonationRepo(postgres);
     const sessionRepo = new SessionRepo(postgres._getPool());
     const hasher = new HasherRepo();
     const mailer = new MailerRepo();
@@ -203,25 +251,17 @@ async function start(): Promise<void> {
     const asteroidCache = new AsteroidCacheService(cache);
     const logCache = new LogCacheService(cache);
     const metricCache = new MetricCacheService(cache);
+    const donationCache = new DonationCacheService(cache);
+    const paymentGateway = new PaymentGatewayRepo();
     //! App layer
     // Use-cases
     const healthCheck = new HealthQuery();
     const loginUser = new LoginUser(userRepo, hasher);
     const signupUser = new SignupUser(userRepo, hasher, mailer, userCache);
     const verifyUser = new VerifyUser(userRepo, hasher, userCache);
-    const resendVerificationCode = new ResendVerificationCode(
-      userRepo,
-      hasher,
-      mailer,
-      userCache,
-    );
+    const resendVerificationCode = new ResendVerificationCode(userRepo, hasher, mailer, userCache);
     const changeEmailUser = new ChangeEmail(userRepo, userCache);
-    const changePasswordUser = new ChangePassword(
-      userRepo,
-      hasher,
-      sessionRepo,
-      userCache,
-    );
+    const changePasswordUser = new ChangePassword(userRepo, hasher, sessionRepo, userCache);
     const changeRoleUser = new ChangeRole(userRepo, sessionRepo, userCache);
     const changeUsernameUser = new ChangeUsername(userRepo, userCache);
     const listUsers = new ListUsers(userRepo, userCache);
@@ -236,6 +276,21 @@ async function start(): Promise<void> {
     const findMetric = new FindMetric(metricRepo, metricCache);
     const listMetrics = new ListMetrics(metricRepo, metricCache);
     const metricsDashboard = new MetricsDashboardQuery(metricRepo, metricCache);
+    const createDonationCheckout = new CreateDonationCheckout(
+      donationRepo,
+      paymentGateway,
+      donationCache,
+    );
+    const confirmDonationBySession = new ConfirmDonationBySession(
+      donationRepo,
+      paymentGateway,
+      donationCache,
+      userRepo,
+      userCache,
+    );
+    const cancelDonation = new CancelDonation(donationRepo, paymentGateway, donationCache);
+    const findDonation = new FindDonation(donationRepo, donationCache);
+    const listDonations = new ListDonations(donationRepo, donationCache);
     const dbMetricTracker = {
       track: async (input: DbMetricInput): Promise<void> => {
         await trackMetric.execute({
@@ -261,6 +316,7 @@ async function start(): Promise<void> {
         moon: (db) => new MoonRepo(db),
         asteroid: (db) => new AsteroidRepo(db),
       },
+      (db) => new UserRepo(db),
       galaxyLifecycle,
       galaxyCache,
       systemCache,
@@ -310,36 +366,13 @@ async function start(): Promise<void> {
     );
     const findSystem = new FindSystem(systemRepo, systemCache);
     const listSystemsByGalaxy = new ListSystemsByGalaxy(systemRepo, systemCache);
-    const changeSystemName = new ChangeSystemName(
-      systemRepo,
-      systemCache,
-      galaxyCache,
-    );
-    const changeSystemPosition = new ChangeSystemPosition(
-      systemRepo,
-      systemCache,
-      galaxyCache,
-    );
+    const changeSystemName = new ChangeSystemName(systemRepo, systemCache, galaxyCache);
+    const changeSystemPosition = new ChangeSystemPosition(systemRepo, systemCache, galaxyCache);
     const findStar = new FindStar(starRepo, starCache);
     const listStarsBySystem = new ListStarsBySystem(starRepo, starCache);
-    const changeStarName = new ChangeStarName(
-      starRepo,
-      systemRepo,
-      starCache,
-      galaxyCache,
-    );
-    const changeStarMain = new ChangeStarMain(
-      starRepo,
-      systemRepo,
-      starCache,
-      galaxyCache,
-    );
-    const changeStarOrbital = new ChangeStarOrbital(
-      starRepo,
-      systemRepo,
-      starCache,
-      galaxyCache,
-    );
+    const changeStarName = new ChangeStarName(starRepo, systemRepo, starCache, galaxyCache);
+    const changeStarMain = new ChangeStarMain(starRepo, systemRepo, starCache, galaxyCache);
+    const changeStarOrbital = new ChangeStarOrbital(starRepo, systemRepo, starCache, galaxyCache);
     const changeStarStarterOrbital = new ChangeStarStarterOrbital(
       starRepo,
       systemRepo,
@@ -348,12 +381,7 @@ async function start(): Promise<void> {
     );
     const findPlanet = new FindPlanet(planetRepo, planetCache);
     const listPlanetsBySystem = new ListPlanetsBySystem(planetRepo, planetCache);
-    const changePlanetName = new ChangePlanetName(
-      planetRepo,
-      systemRepo,
-      planetCache,
-      galaxyCache,
-    );
+    const changePlanetName = new ChangePlanetName(planetRepo, systemRepo, planetCache, galaxyCache);
     const changePlanetOrbital = new ChangePlanetOrbital(
       planetRepo,
       systemRepo,
@@ -390,10 +418,7 @@ async function start(): Promise<void> {
       galaxyCache,
     );
     const findAsteroid = new FindAsteroid(asteroidRepo, asteroidCache);
-    const listAsteroidsBySystem = new ListAsteroidsBySystem(
-      asteroidRepo,
-      asteroidCache,
-    );
+    const listAsteroidsBySystem = new ListAsteroidsBySystem(asteroidRepo, asteroidCache);
     const changeAsteroidName = new ChangeAsteroidName(
       asteroidRepo,
       systemRepo,
@@ -431,6 +456,7 @@ async function start(): Promise<void> {
       sessionRepo,
       jwtService,
       hasher,
+      userRepo,
     );
     const platformService = new PlatformService(
       signupUser,
@@ -507,28 +533,28 @@ async function start(): Promise<void> {
       findSystem,
       findGalaxy,
     );
-    const logController = new LogController(
-      createLog,
-      resolveLog,
-      findLog,
-      listLogs,
-    );
+    const logController = new LogController(createLog, resolveLog, findLog, listLogs);
     const metricController = new MetricController(
       trackMetric,
       findMetric,
       listMetrics,
       metricsDashboard,
     );
+    const donationController = new DonationController(
+      createDonationCheckout,
+      confirmDonationBySession,
+      cancelDonation,
+      findDonation,
+      listDonations,
+    );
     // Middlewares
     const authMiddleware = new AuthMiddleware(jwtService, {
-      issuer: process.env.JWT_ISSUER!,
-      audience: process.env.JWT_AUDIENCE!,
+      issuer: APP_ENV.JWT_ISSUER,
+      audience: APP_ENV.JWT_AUDIENCE,
     });
     const scopeMiddleware = new ScopeMiddleware();
     const requestAuditMiddleware = new RequestAuditMiddleware(createLog);
-    const performanceMetricsMiddleware = new PerformanceMetricsMiddleware(
-      trackMetric,
-    );
+    const performanceMetricsMiddleware = new PerformanceMetricsMiddleware(trackMetric);
 
     app.use(requestAuditMiddleware.bindRequestId());
     app.use(performanceMetricsMiddleware.captureHttpDuration());
@@ -545,6 +571,7 @@ async function start(): Promise<void> {
         asteroidController,
         logController,
         metricController,
+        donationController,
         auth: authMiddleware,
         scope: scopeMiddleware,
       }),
@@ -560,7 +587,7 @@ async function start(): Promise<void> {
     // --------------------
     // 3️⃣ Start listening
     // --------------------
-    app.listen(PORT, () => {
+    httpServer = app.listen(PORT, () => {
       console.log(
         `${CONSOLE_COLORS.labelColor("[🛜SERVER]")} ${CONSOLE_COLORS.successColor(
           `Listening on port ${PORT}`,
@@ -573,6 +600,13 @@ async function start(): Promise<void> {
         `Failed to start: ${e instanceof Error ? e.message : String(e)}`,
       )}`,
     );
+    maintenanceScheduler?.stop();
+    try {
+      await cache?.close();
+    } catch {}
+    try {
+      await postgres?.close();
+    } catch {}
     process.exit(1);
   }
 }
@@ -587,6 +621,12 @@ const shutdown = async (signal: string) => {
     )}`,
   );
   try {
+    if (httpServer) {
+      await new Promise<void>((resolve, reject) => {
+        httpServer?.close((err?: Error) => (err ? reject(err) : resolve()));
+      });
+    }
+    maintenanceScheduler?.stop();
     await cache?.close();
     await postgres?.close();
     process.exit(0);
@@ -602,6 +642,20 @@ const shutdown = async (signal: string) => {
 
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+process.on("unhandledRejection", (reason: unknown) => {
+  console.error(
+    `${CONSOLE_COLORS.labelColor("[ðŸ›œSERVER]")} ${CONSOLE_COLORS.errorColor(
+      `Unhandled rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
+    )}`,
+  );
+});
+process.on("uncaughtException", (error: Error) => {
+  console.error(
+    `${CONSOLE_COLORS.labelColor("[ðŸ›œSERVER]")} ${CONSOLE_COLORS.errorColor(
+      `Uncaught exception: ${error.message}`,
+    )}`,
+  );
+});
 
 // --------------------
 // Bootstrap

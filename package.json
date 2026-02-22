@@ -6,10 +6,27 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/server.js",
+    "start:prod": "node dist/server.js",
+    "start:prod:migrated": "npm run migrate:dist && npm run start:prod",
+    "deploy:local": "npm run build && npm run start:prod:migrated",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon dist/server.js\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "typecheck": "npx tsc --noEmit",
+    "validate": "npm run lint && npm run typecheck && npm run test -- --runInBand",
+    "prepare": "husky",
     "test": "jest --detectOpenHandles",
     "test:watch": "jest --watch --detectOpenHandles",
     "migrate": "ts-node --transpile-only src/infra/db/scripts/migrate.ts",
+    "migrate:dist": "node dist/infra/db/scripts/migrate.js",
+    "docker:prod:build": "docker compose -f docker-compose.prod.yaml build",
+    "docker:prod:up": "docker compose -f docker-compose.prod.yaml up -d",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yaml down",
+    "docker:prod:logs": "docker compose -f docker-compose.prod.yaml logs -f api",
+    "docker:prod:migrate": "docker compose -f docker-compose.prod.yaml run --rm api npm run migrate:dist",
+    "docker:prod:deploy": "npm run docker:prod:build && npm run docker:prod:up && npm run docker:prod:migrate",
     "initSeed": "ts-node --transpile-only src/infra/db/scripts/initSeed.ts"
   },
   "keywords": [],
@@ -30,6 +47,7 @@
     "nodemailer": "^8.0.0",
     "pg": "^8.18.0",
     "redis": "^5.10.0",
+    "stripe": "^20.3.1",
     "ts-node": "^10.9.2",
     "zod": "^4.3.6"
   },
@@ -46,11 +64,26 @@
     "@types/pg": "^8.16.0",
     "@types/redis": "^4.0.10",
     "@types/supertest": "^6.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
     "concurrently": "^9.2.1",
+    "eslint": "^10.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
     "jest": "^30.2.0",
+    "lint-staged": "^16.2.7",
     "nodemon": "^3.1.11",
+    "prettier": "^3.8.1",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
+  },
+  "lint-staged": {
+    "*.{ts,js,json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "*.{ts,js}": [
+      "eslint --fix"
+    ]
   }
 }

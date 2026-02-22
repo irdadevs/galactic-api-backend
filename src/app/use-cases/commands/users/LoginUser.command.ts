@@ -11,6 +11,7 @@ export class LoginUser {
   ) {}
 
   async execute(dto: LoginDTO): Promise<User> {
+    await this.repo.archiveInactive(90);
     const exist = await this.repo.findByEmail(Email.create(dto.email));
 
     const passwordHash = exist?.passwordHash ?? "$2b$10$invalidhashforcompare";
@@ -26,6 +27,12 @@ export class LoginUser {
 
     if (!exist.isVerified) {
       throw ErrorFactory.presentation("USERS.EMAIL_NOT_VERIFIED");
+    }
+
+    if (exist.isArchived) {
+      exist.unarchive();
+      const unarchived = await this.repo.save(exist);
+      return unarchived;
     }
 
     return exist;

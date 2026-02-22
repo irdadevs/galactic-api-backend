@@ -7,6 +7,8 @@ import { LoginDTO } from "../../../presentation/security/users/Login.dto";
 import { RefreshSession } from "../../use-cases/commands/users/RefreshSession.command";
 import { LogoutSession } from "../../use-cases/commands/users/LogoutSession.command";
 import { LogoutAllSessions } from "../../use-cases/commands/users/LogoutAllSessions.command";
+import { IUser } from "../../interfaces/User.port";
+import { Uuid } from "../../../domain/aggregates/User";
 
 export class AuthService {
   constructor(
@@ -17,6 +19,7 @@ export class AuthService {
     private readonly sessionRepo: ISession,
     private readonly jwt: IJWT,
     private readonly hasher: IHasher,
+    private readonly userRepo: IUser,
   ) {}
 
   async login(dto: LoginDTO, meta?: { userAgent?: string; ip?: string }) {
@@ -48,6 +51,7 @@ export class AuthService {
       isRevoked: false,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
+    await this.userRepo.touchActivity(Uuid.create(user.id));
 
     return {
       user,
@@ -56,8 +60,13 @@ export class AuthService {
     };
   }
 
-  refresh(refreshToken: string) {
-    return this.refreshSession.execute(refreshToken);
+  async refresh(refreshToken: string) {
+    const tokens = await this.refreshSession.execute(refreshToken);
+    const claims = this.jwt.verifyRefreshToken(refreshToken);
+    if (claims.sub) {
+      await this.userRepo.touchActivity(Uuid.create(claims.sub));
+    }
+    return tokens;
   }
 
   logout(sessionId: string) {

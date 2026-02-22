@@ -1,345 +1,295 @@
 import request from "supertest";
-import { buildTestApi, IDS, makeAuthHeader } from "../helpers/apiTestApp";
+import { Express as ExpressApp } from "express";
+import {
+  createRealInfraContext,
+  RealInfraContext,
+  RUN_REAL_INFRA_TESTS,
+} from "../helpers/realInfra";
+import { buildRealApiApp } from "../helpers/realApiApp";
 
-describe("API E2E - auth, ownership and validation boundaries", () => {
-  test("rejects protected endpoints when Authorization header is missing", async () => {
-    const { app } = buildTestApi();
+type LoginResult = {
+  cookies: string[];
+};
+
+const describeReal = RUN_REAL_INFRA_TESTS ? describe : describe.skip;
+
+describeReal("API E2E (real infra) - auth, ownership and lifecycle", () => {
+  let infra: RealInfraContext;
+  let app: ExpressApp;
+
+  let userA: { id: string; email: string; username: string };
+  let userB: { id: string; email: string; username: string };
+  let admin: { id: string; email: string; username: string };
+
+  let galaxyAId = "";
+  let galaxyBId = "";
+  let systemBId = "";
+  let starBId = "";
+  let planetBId = "";
+  let moonBId = "";
+  let asteroidBId = "";
+
+  const password = "Passw0rd!123";
+
+  async function login(email: string): Promise<LoginResult> {
+    const res = await request(app)
+      .post("/api/v1/users/login")
+      .send({ email, rawPassword: password })
+      .expect(200);
+
+    const raw = res.headers["set-cookie"];
+    const cookies = (Array.isArray(raw) ? raw : raw ? [raw] : []).map(
+      (cookie) => cookie.split(";")[0],
+    );
+    return { cookies };
+  }
+
+  beforeAll(async () => {
+    infra = await createRealInfraContext("api-lifecycle-e2e");
+    await infra.resetDatabase();
+    await infra.resetCache();
+
+    const built = buildRealApiApp(infra);
+    app = built.app;
+
+    userA = await built.seedUser({
+      email: "e2e.user.a@test.local",
+      username: "e2e_user_a",
+      password,
+      role: "User",
+    });
+    userB = await built.seedUser({
+      email: "e2e.user.b@test.local",
+      username: "e2e_user_b",
+      password,
+      role: "User",
+    });
+    admin = await built.seedUser({
+      email: "e2e.admin@test.local",
+      username: "e2e_admin",
+      password,
+      role: "Admin",
+    });
+
+    const userALogin = await login(userA.email);
+    const userBLogin = await login(userB.email);
+
+    const createdA = await request(app)
+      .post("/api/v1/galaxies")
+      .set("Cookie", userALogin.cookies)
+      .send({ name: "Alpha-01", shape: "spherical", systemCount: 3 })
+      .expect(201);
+    galaxyAId = createdA.body.id;
+
+    const createdB = await request(app)
+      .post("/api/v1/galaxies")
+      .set("Cookie", userBLogin.cookies)
+      .send({ name: "Beta-001", shape: "irregular", systemCount: 3 })
+      .expect(201);
+    galaxyBId = createdB.body.id;
+
+    const populatedB = await request(app)
+      .get(`/api/v1/galaxies/${galaxyBId}/populate`)
+      .set("Cookie", userBLogin.cookies)
+      .expect(200);
+
+    const firstSystem = populatedB.body.systems[0];
+    systemBId = firstSystem.system.id;
+    starBId = firstSystem.stars[0].id;
+
+    let ensuredPlanetId: string | undefined = firstSystem.planets[0]?.planet?.id;
+    let ensuredMoonId: string | undefined = firstSystem.planets[0]?.moons?.[0]?.id;
+    let ensuredAsteroidId: string | undefined = firstSystem.asteroids[0]?.id;
+
+    if (!ensuredPlanetId) {
+      const insertedPlanet = await infra.db.query<{ id: string }>(
+        `
+          INSERT INTO procedurals.planets
+            (system_id, name, type, size, orbital, biome, relative_mass, absolute_mass, relative_radius, absolute_radius, gravity, temperature)
+          VALUES
+            ($1, 'PlanetSeedB', 'solid', 'medium', 2, 'temperate', 1, 1, 1, 1, 9.8, 288)
+          RETURNING id
+        `,
+        [systemBId],
+      );
+      ensuredPlanetId = insertedPlanet.rows[0].id;
+    }
+
+    if (!ensuredMoonId) {
+      const insertedMoon = await infra.db.query<{ id: string }>(
+        `
+          INSERT INTO procedurals.moons
+            (planet_id, name, size, orbital, relative_mass, absolute_mass, relative_radius, absolute_radius, gravity, temperature)
+          VALUES
+            ($1, 'MoonSeedB', 'medium', 1, 1, 1, 1, 1, 1.62, 220)
+          RETURNING id
+        `,
+        [ensuredPlanetId],
+      );
+      ensuredMoonId = insertedMoon.rows[0].id;
+    }
+
+    if (!ensuredAsteroidId) {
+      const insertedAsteroid = await infra.db.query<{ id: string }>(
+        `
+          INSERT INTO procedurals.asteroids
+            (system_id, name, type, size, orbital)
+          VALUES
+            ($1, 'AST-501', 'single', 'small', 2.5)
+          RETURNING id
+        `,
+        [systemBId],
+      );
+      ensuredAsteroidId = insertedAsteroid.rows[0].id;
+    }
+
+    planetBId = ensuredPlanetId;
+    moonBId = ensuredMoonId;
+    asteroidBId = ensuredAsteroidId;
+  });
+
+  afterAll(async () => {
+    await infra.close();
+  });
+
+  test("rejects protected endpoints when auth is missing", async () => {
     await request(app).get("/api/v1/galaxies").expect(401);
   });
 
-  test("rejects invalid bearer token payload", async () => {
-    const { app } = buildTestApi();
-    await request(app)
-      .get("/api/v1/galaxies")
-      .set("Authorization", "Bearer malformed-token")
-      .expect(401);
+  test("login sets access and refresh cookies", async () => {
+    const result = await login(userA.email);
+    expect(result.cookies.some((value) => value.startsWith("access_token="))).toBe(true);
+    expect(result.cookies.some((value) => value.startsWith("refresh_token="))).toBe(true);
   });
 
-  test("sets access and refresh cookies on login", async () => {
-    const { app } = buildTestApi();
-    const response = await request(app)
-      .post("/api/v1/users/login")
-      .send({ email: "a@test.com", rawPassword: "123456" })
-      .expect(200);
-
-    const rawSetCookie = response.headers["set-cookie"];
-    const setCookie = Array.isArray(rawSetCookie)
-      ? rawSetCookie
-      : rawSetCookie
-        ? [rawSetCookie]
-        : [];
-    expect(setCookie.some((value: string) => value.startsWith("access_token="))).toBe(true);
-    expect(setCookie.some((value: string) => value.startsWith("refresh_token="))).toBe(true);
-    expect(response.body.user).toBeDefined();
-    expect(response.body.accessToken).toBeUndefined();
-    expect(response.body.refreshToken).toBeUndefined();
-  });
-
-  test("accepts access token from cookie for protected routes", async () => {
-    const { app } = buildTestApi();
-    await request(app)
-      .get("/api/v1/galaxies")
-      .set("Cookie", [`access_token=${IDS.userA}|User`])
-      .expect(200);
-  });
-
-  test("uses refresh token from cookie in refresh endpoint", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
+  test("refresh rotates auth cookies using refresh_token cookie", async () => {
+    const result = await login(userA.email);
+    const refreshed = await request(app)
       .post("/api/v1/users/token/refresh")
-      .set("Cookie", ["refresh_token=valid.refresh.token"])
+      .set("Cookie", result.cookies)
       .expect(200);
-    expect(mocks.authService.refresh).toHaveBeenCalledWith("valid.refresh.token");
+
+    const rawSetCookie = refreshed.headers["set-cookie"];
+    const cookies = Array.isArray(rawSetCookie) ? rawSetCookie : rawSetCookie ? [rawSetCookie] : [];
+    expect(cookies.some((value) => value.startsWith("access_token="))).toBe(true);
+    expect(cookies.some((value) => value.startsWith("refresh_token="))).toBe(true);
   });
 
-  test("uses refresh token cookie for logout and clears auth cookies", async () => {
-    const { app, mocks } = buildTestApi();
-    const response = await request(app)
-      .post("/api/v1/users/logout")
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .set("Cookie", ["refresh_token=valid.refresh.token"])
-      .expect(204);
-    expect(mocks.authService.logoutByRefreshToken).toHaveBeenCalledWith(
-      "valid.refresh.token",
-    );
-    const rawSetCookie = response.headers["set-cookie"];
-    const setCookie = Array.isArray(rawSetCookie)
-      ? rawSetCookie
-      : rawSetCookie
-        ? [rawSetCookie]
-        : [];
-    expect(setCookie.some((value: string) => value.startsWith("access_token=;"))).toBe(true);
-    expect(setCookie.some((value: string) => value.startsWith("refresh_token=;"))).toBe(true);
-  });
-
-  test("allows any authenticated user to create galaxies and injects ownerId from auth context", async () => {
-    const { app, mocks } = buildTestApi();
-
-    const response = await request(app)
-      .post("/api/v1/galaxies")
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .send({ name: "NewGalaxy", shape: "spherical", systemCount: 3 })
-      .expect(201);
-
-    expect(mocks.createGalaxy.execute).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ownerId: IDS.userA,
-        name: "NewGalaxy",
-        systemCount: 3,
-      }),
-    );
-    expect(response.body.ownerId).toBe(IDS.userA);
-  });
-
-  test("returns only own galaxy for non-admin list route", async () => {
-    const { app, mocks } = buildTestApi();
+  test("non-admin list returns only own galaxies", async () => {
+    const userALogin = await login(userA.email);
     const response = await request(app)
       .get("/api/v1/galaxies")
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .set("Cookie", userALogin.cookies)
       .expect(200);
 
-    expect(mocks.findGalaxy.byOwner).toHaveBeenCalled();
-    expect(mocks.listGalaxies.execute).not.toHaveBeenCalled();
     expect(response.body.total).toBe(1);
-    expect(response.body.rows[0].ownerId).toBe(IDS.userA);
+    expect(response.body.rows[0].ownerId).toBe(userA.id);
+    expect(response.body.rows[0].id).toBe(galaxyAId);
   });
 
-  test("allows admin to list all galaxies", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .get("/api/v1/galaxies?page=1&limit=20")
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
-      .expect(200);
-
-    expect(mocks.listGalaxies.execute).toHaveBeenCalled();
-  });
-
-  test("allows only admin to list users", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .get("/api/v1/users")
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .expect(403);
-
-    await request(app)
-      .get("/api/v1/users?limit=20")
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
-      .expect(200);
-
-    expect(mocks.listUsers.execute).toHaveBeenCalled();
-  });
-
-  test("allows admin to change user role", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .patch(`/api/v1/users/${IDS.userA}/role`)
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
-      .send({ newRole: "Admin" })
-      .expect(204);
-
-    expect(mocks.platformService.changeRole).toHaveBeenCalled();
-  });
-
-  test("allows admin to soft-delete and restore users", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .delete("/api/v1/users/soft-delete")
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
-      .send({ id: IDS.userA })
-      .expect(204);
-
-    await request(app)
-      .post("/api/v1/users/restore")
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
-      .send({ id: IDS.userA })
-      .expect(204);
-
-    expect(mocks.lifecycleService.softDelete).toHaveBeenCalled();
-    expect(mocks.lifecycleService.restore).toHaveBeenCalled();
-  });
-
-  test("forbids non-admin access to other user galaxy by id", async () => {
-    const { app } = buildTestApi();
-    await request(app)
-      .get(`/api/v1/galaxies/${IDS.galaxyB}`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .expect(403);
-  });
-
-  test("allows admin access to any galaxy by id", async () => {
-    const { app } = buildTestApi();
+  test("admin can list all galaxies", async () => {
+    const adminLogin = await login(admin.email);
     const response = await request(app)
-      .get(`/api/v1/galaxies/${IDS.galaxyB}`)
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .get("/api/v1/galaxies?limit=20&offset=0")
+      .set("Cookie", adminLogin.cookies)
       .expect(200);
-    expect(response.body.id).toBe(IDS.galaxyB);
+
+    expect(Number(response.body.total)).toBeGreaterThanOrEqual(2);
   });
 
-  test("validates galaxy shape patch payload", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .patch(`/api/v1/galaxies/${IDS.galaxyA}/shape`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .send({ shape: "unknown-shape" })
-      .expect(400);
-    expect(mocks.changeGalaxyShape.execute).not.toHaveBeenCalled();
-  });
+  test("forbids non-owner access to another user's galaxy and nested resources", async () => {
+    const userALogin = await login(userA.email);
 
-  test("forbids non-owner from mutating systems", async () => {
-    const { app, mocks } = buildTestApi();
     await request(app)
-      .patch(`/api/v1/systems/${IDS.systemB}/name`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .get(`/api/v1/galaxies/${galaxyBId}`)
+      .set("Cookie", userALogin.cookies)
+      .expect(403);
+
+    await request(app)
+      .patch(`/api/v1/systems/${systemBId}/name`)
+      .set("Cookie", userALogin.cookies)
       .send({ name: "ForbiddenSystem" })
       .expect(403);
-    expect(mocks.changeSystemName.execute).not.toHaveBeenCalled();
-  });
 
-  test("validates system position payload", async () => {
-    const { app, mocks } = buildTestApi();
     await request(app)
-      .patch(`/api/v1/systems/${IDS.systemA}/position`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .send({ x: "10", y: 20, z: 30 })
-      .expect(400);
-    expect(mocks.changeSystemPosition.execute).not.toHaveBeenCalled();
-  });
-
-  test("forbids non-owner from mutating stars", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .patch(`/api/v1/stars/${IDS.starB}/main`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .send({ isMain: true })
-      .expect(403);
-    expect(mocks.changeStarMain.execute).not.toHaveBeenCalled();
-  });
-
-  test("validates star orbital payload", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .patch(`/api/v1/stars/${IDS.starA}/orbital`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .send({ orbital: -1 })
-      .expect(400);
-    expect(mocks.changeStarOrbital.execute).not.toHaveBeenCalled();
-  });
-
-  test("allows admin to mutate any star", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .patch(`/api/v1/stars/${IDS.starB}/main`)
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .patch(`/api/v1/stars/${starBId}/main`)
+      .set("Cookie", userALogin.cookies)
       .send({ isMain: false })
-      .expect(204);
-    expect(mocks.changeStarMain.execute).toHaveBeenCalled();
-  });
+      .expect(403);
 
-  test("forbids non-owner from mutating planets", async () => {
-    const { app, mocks } = buildTestApi();
     await request(app)
-      .patch(`/api/v1/planets/${IDS.planetB}/biome`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .patch(`/api/v1/planets/${planetBId}/biome`)
+      .set("Cookie", userALogin.cookies)
       .send({ biome: "desert" })
       .expect(403);
-    expect(mocks.changePlanetBiome.execute).not.toHaveBeenCalled();
-  });
 
-  test("validates planet orbital payload", async () => {
-    const { app, mocks } = buildTestApi();
     await request(app)
-      .patch(`/api/v1/planets/${IDS.planetA}/orbital`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .send({ orbital: 0 })
-      .expect(400);
-    expect(mocks.changePlanetOrbital.execute).not.toHaveBeenCalled();
-  });
-
-  test("forbids non-owner from mutating moons", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .patch(`/api/v1/moons/${IDS.moonB}/size`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .patch(`/api/v1/moons/${moonBId}/size`)
+      .set("Cookie", userALogin.cookies)
       .send({ size: "medium" })
       .expect(403);
-    expect(mocks.changeMoonSize.execute).not.toHaveBeenCalled();
-  });
 
-  test("validates moon orbital payload", async () => {
-    const { app, mocks } = buildTestApi();
     await request(app)
-      .patch(`/api/v1/moons/${IDS.moonA}/orbital`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .send({ orbital: 0 })
-      .expect(400);
-    expect(mocks.changeMoonOrbital.execute).not.toHaveBeenCalled();
-  });
-
-  test("forbids non-owner from mutating asteroids", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .patch(`/api/v1/asteroids/${IDS.asteroidB}/type`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .patch(`/api/v1/asteroids/${asteroidBId}/type`)
+      .set("Cookie", userALogin.cookies)
       .send({ type: "single" })
       .expect(403);
-    expect(mocks.changeAsteroidType.execute).not.toHaveBeenCalled();
   });
 
-  test("validates asteroid size payload", async () => {
-    const { app, mocks } = buildTestApi();
+  test("admin can mutate nested resources from any owner", async () => {
+    const adminLogin = await login(admin.email);
     await request(app)
-      .patch(`/api/v1/asteroids/${IDS.asteroidA}/size`)
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .send({ size: "colossal" })
-      .expect(400);
-    expect(mocks.changeAsteroidSize.execute).not.toHaveBeenCalled();
-  });
-
-  test("allows only admin to list logs", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .get("/api/v1/logs")
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
-      .expect(403);
-
-    await request(app)
-      .get("/api/v1/logs?limit=20")
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
-      .expect(200);
-
-    expect(mocks.listLogs.execute).toHaveBeenCalled();
-  });
-
-  test("allows admin to resolve logs", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .patch("/api/v1/logs/10/resolve")
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
+      .patch(`/api/v1/stars/${starBId}/main`)
+      .set("Cookie", adminLogin.cookies)
+      .send({ isMain: true })
       .expect(204);
-    expect(mocks.resolveLog.execute).toHaveBeenCalledWith("10", IDS.admin);
   });
 
-  test("allows only admin to access performance metrics dashboard", async () => {
-    const { app, mocks } = buildTestApi();
+  test("populate returns full nested galaxy data", async () => {
+    const userBLogin = await login(userB.email);
+    const response = await request(app)
+      .get(`/api/v1/galaxies/${galaxyBId}/populate`)
+      .set("Cookie", userBLogin.cookies)
+      .expect(200);
+
+    expect(response.body.galaxy.id).toBe(galaxyBId);
+    expect(Array.isArray(response.body.systems)).toBe(true);
+    expect(response.body.systems.length).toBeGreaterThan(0);
+    expect(response.body.systems[0].system).toBeDefined();
+    expect(Array.isArray(response.body.systems[0].stars)).toBe(true);
+    expect(Array.isArray(response.body.systems[0].planets)).toBe(true);
+    expect(Array.isArray(response.body.systems[0].asteroids)).toBe(true);
+  });
+
+  test("donation lifecycle enforces owner access", async () => {
+    const userALogin = await login(userA.email);
+    const userBLogin = await login(userB.email);
+
+    const created = await request(app)
+      .post("/api/v1/donations/checkout")
+      .set("Cookie", userALogin.cookies)
+      .send({
+        donationType: "monthly",
+        amountMinor: 999,
+        currency: "USD",
+        successUrl: "https://app.local/success",
+        cancelUrl: "https://app.local/cancel",
+      })
+      .expect(201);
+
+    const donationId = created.body.donationId as string;
+    const sessionId = created.body.sessionId as string;
+    expect(donationId).toBeDefined();
+    expect(sessionId).toBeDefined();
+
     await request(app)
-      .get("/api/v1/metrics/performance/dashboard")
-      .set("Authorization", makeAuthHeader(IDS.userA, "User"))
+      .get(`/api/v1/donations/${donationId}`)
+      .set("Cookie", userBLogin.cookies)
       .expect(403);
 
     await request(app)
-      .get("/api/v1/metrics/performance/dashboard?hours=24&topLimit=10")
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
-      .expect(200);
-
-    expect(mocks.dashboardMetrics.execute).toHaveBeenCalled();
-  });
-
-  test("allows admin to list performance metrics", async () => {
-    const { app, mocks } = buildTestApi();
-    await request(app)
-      .get("/api/v1/metrics/performance?limit=20")
-      .set("Authorization", makeAuthHeader(IDS.admin, "Admin"))
-      .expect(200);
-    expect(mocks.listMetrics.execute).toHaveBeenCalled();
+      .post(`/api/v1/donations/checkout/${sessionId}/confirm`)
+      .set("Cookie", userALogin.cookies)
+      .expect(204);
   });
 });

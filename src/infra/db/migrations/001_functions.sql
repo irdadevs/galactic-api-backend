@@ -84,3 +84,35 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- === User lifecycle helpers ===
+CREATE OR REPLACE FUNCTION auth_touch_user_activity(
+  p_user_id uuid,
+  p_at timestamptz DEFAULT now_utc()
+) RETURNS void AS $$
+BEGIN
+  UPDATE auth.users
+  SET last_activity_at = COALESCE(p_at, now_utc()),
+      updated_at = now_utc()
+  WHERE id = p_user_id
+    AND is_archived = false;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION auth_archive_inactive_users(
+  p_days integer DEFAULT 90
+) RETURNS TABLE (id uuid, email text, username text) AS $$
+BEGIN
+  RETURN QUERY
+  UPDATE auth.users u
+  SET is_archived = true,
+      archived_at = now_utc(),
+      is_deleted = true,
+      deleted_at = COALESCE(u.deleted_at, now_utc()),
+      updated_at = now_utc()
+  WHERE u.is_archived = false
+    AND COALESCE(u.last_activity_at, u.updated_at, u.created_at) <
+      (now_utc() - make_interval(days => p_days))
+  RETURNING u.id, u.email::text, u.username::text;
+END;
+$$ LANGUAGE plpgsql;
