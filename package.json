@@ -1,7 +1,7 @@
 {
   "name": "galactic-api-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Galactica API backend. Create and simulate whole galaxies.",
   "main": "./dist/server.js",
   "scripts": {
     "build": "npx tsc",
