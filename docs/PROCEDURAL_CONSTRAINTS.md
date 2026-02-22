@@ -1,5 +1,7 @@
 # ORBITALS
+
 Some aggregates work with orbitals:
+
 - Stars: from 0 (center) to 1 (orbiting center). Main star is always in orbital 0, the rest relies in 1.
 - Planets: from 1 to 8. Each type of star defines the first orbital allowed (orbitalStarter). The bigger the star, the bigger this number (planets start orbiting farther).
 - Moons: from 1 to 5 being 0 the planet who orbits. 1 more close, 5 more far from the planet.
@@ -8,16 +10,19 @@ Some aggregates work with orbitals:
 The orbital system is designed in order to avoid collides between entities in the visualization.
 
 # SYSTEMS
+
 Min 1 system per galaxy, max 1000.
 System coordinates must be based on galaxy shape (in order to ensure shape stays real in client visualization).
 
 # STARS
+
 Min 1 star per system, max 3.
 If a star is a black hole or a neutron star the max always will be 1.
 The most massive star remains as main star of system with orbital 0, the others isMain = false and orbital 1.
 The selection of the star type are based on probabilities defined into 'const STAR_PROBABILITIES'. Once this is selected the other parameters fall into a range (already defined).
 
 # PLANETS, MOONS AND ASTEROIDS
+
 Max number of asteroids is star (9 - orbitalStarter + 0.5) to ensure that max are 8 asteroids per system always that the orbitalStarter is 1
 Max number of planets per system is 8, min 0.
 Max number of moons per planet is 5, min 0.
@@ -25,6 +30,7 @@ Max and mins are always based on star orbitalStarter.
 The props of the entities will be procedural and based on the constants and ranges already defined in domain layer (each aggregate have his own).
 
 # IMPLEMENTATION NOTES (CURRENT)
+
 - Galaxy create/delete are transactional with UoW. Any failure in a nested aggregate rolls back the full operation.
 - Systems are generated using galaxy shape:
   - `spherical`: 3D sphere distribution.
