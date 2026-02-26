@@ -1,5 +1,5 @@
 import { IHasher } from "../../app/interfaces/Hasher.port";
-import { IUser } from "../../app/interfaces/User.port";
+import { IUser, UserListItem } from "../../app/interfaces/User.port";
 import { LoginUser } from "../../app/use-cases/commands/users/LoginUser.command";
 import { User, Uuid } from "../../domain/aggregates/User";
 
@@ -64,9 +64,7 @@ describe("User aggregate", () => {
     expect(user.role).toBe("Admin");
     expect(user.isVerified).toBe(true);
     expect(user.verificationCode).toBe("verification-hash-12345678");
-    expect(user.verificationCodeExpiresAt?.toISOString()).toBe(
-      "2025-01-01T11:30:00.000Z",
-    );
+    expect(user.verificationCodeExpiresAt?.toISOString()).toBe("2025-01-01T11:30:00.000Z");
     expect(user.verifiedAt?.toISOString()).toBe("2025-01-01T12:00:00.000Z");
     expect(user.isDeleted).toBe(true);
     expect(user.isArchived).toBe(false);
@@ -153,9 +151,7 @@ describe("User aggregate", () => {
     );
 
     expect(user.verificationCode).toBe("hashed-verification-code-12345678");
-    expect(user.verificationCodeExpiresAt?.toISOString()).toBe(
-      "2025-01-01T11:30:00.000Z",
-    );
+    expect(user.verificationCodeExpiresAt?.toISOString()).toBe("2025-01-01T11:30:00.000Z");
     expect(user.isVerified).toBe(false);
     expect(user.verifiedAt).toBeNull();
   });
@@ -365,7 +361,7 @@ describe("LoginUser command", () => {
       findByEmail: jest.fn(async (): Promise<User | null> => archived),
       findByUsername: jest.fn(async (): Promise<User | null> => null),
       list: jest.fn(
-        async (): Promise<{ rows: User[]; total: number }> => ({
+        async (): Promise<{ rows: UserListItem[]; total: number }> => ({
           rows: [],
           total: 0,
         }),
@@ -379,9 +375,7 @@ describe("LoginUser command", () => {
       restore: jest.fn(async (): Promise<void> => undefined),
       touchActivity: jest.fn(async (): Promise<void> => undefined),
       archiveInactive: jest.fn(
-        async (): Promise<
-          Array<{ id: string; email: string; username: string }>
-        > => [],
+        async (): Promise<Array<{ id: string; email: string; username: string }>> => [],
       ),
     };
 

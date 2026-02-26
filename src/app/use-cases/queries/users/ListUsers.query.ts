@@ -1,5 +1,4 @@
-import { User } from "../../../../domain/aggregates/User";
-import { IUser, ListUsersQuery } from "../../../interfaces/User.port";
+import { IUser, ListUsersQuery, UserListItem } from "../../../interfaces/User.port";
 import { UserCacheService } from "../../../app-services/users/UserCache.service";
 
 export class ListUsers {
@@ -20,9 +19,7 @@ export class ListUsers {
     }
   }
 
-  async execute(
-    query: ListUsersQuery,
-  ): Promise<{ rows: User[]; total: number }> {
+  async execute(query: ListUsersQuery): Promise<{ rows: UserListItem[]; total: number }> {
     await this.archiveInactiveAndInvalidate();
     const cached = await this.userCache.getList(query);
     if (cached) {

@@ -20,10 +20,11 @@ import { SoftDeleteDTO } from "../security/users/SoftDelete.dto";
 import { VerifyDTO } from "../security/users/Verify.dto";
 import FindUser from "../../app/use-cases/queries/users/FindUser.query";
 import { ListUsers } from "../../app/use-cases/queries/users/ListUsers.query";
+import { UserListItem } from "../../app/interfaces/User.port";
 import errorHandler from "../../utils/errors/Errors.handler";
 import invalidBody from "../../utils/invalidBody";
 import { ListUsersDTO } from "../security/users/ListUsers.dto";
-import { Email, Username, Uuid } from "../../domain/aggregates/User";
+import { Email, User, Username, Uuid } from "../../domain/aggregates/User";
 import { AUTH_COOKIE_NAMES, getCookie } from "../../utils/Cookies";
 import { TOKEN_TIMES_MAP } from "../../utils/TokenTimes.map";
 
@@ -62,6 +63,48 @@ export class UserController {
     return getCookie(req, AUTH_COOKIE_NAMES.refreshToken) ?? null;
   }
 
+  private toIsoOrNull(value: Date | null): string | null {
+    return value ? value.toISOString() : null;
+  }
+
+  private toPublicUserFromAggregate(user: User) {
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      verified: user.isVerified,
+      isDeleted: user.isDeleted,
+      isArchived: user.isArchived,
+      isSupporter: user.isSupporter,
+      createdAt: user.createdAt.toISOString(),
+      lastActivityAt: user.lastActivityAt.toISOString(),
+      verifiedAt: this.toIsoOrNull(user.verifiedAt),
+      deletedAt: this.toIsoOrNull(user.deletedAt),
+      archivedAt: this.toIsoOrNull(user.archivedAt),
+      supporterFrom: this.toIsoOrNull(user.supporterFrom),
+    };
+  }
+
+  private toPublicUserFromListItem(user: UserListItem) {
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      verified: user.verified,
+      isDeleted: user.isDeleted,
+      isArchived: user.isArchived,
+      isSupporter: user.isSupporter,
+      createdAt: user.createdAt.toISOString(),
+      lastActivityAt: user.lastActivityAt.toISOString(),
+      verifiedAt: this.toIsoOrNull(user.verifiedAt),
+      deletedAt: this.toIsoOrNull(user.deletedAt),
+      archivedAt: this.toIsoOrNull(user.archivedAt),
+      supporterFrom: this.toIsoOrNull(user.supporterFrom),
+    };
+  }
+
   public health = async (_req: Request, res: Response) => {
     try {
       const result = await this.healthCheck.execute("auth");
@@ -95,12 +138,7 @@ export class UserController {
       );
 
       return res.status(200).json({
-        user: {
-          id: result.user.id,
-          email: result.user.email,
-          role: result.user.role,
-          verified: result.user.isVerified,
-        },
+        user: this.toPublicUserFromAggregate(result.user),
       });
     } catch (err: unknown) {
       return errorHandler(err, res);
@@ -152,10 +190,7 @@ export class UserController {
         await this.authService.logout(parsed.data.sessionId);
       }
       res.clearCookie(AUTH_COOKIE_NAMES.accessToken, this.clearCookieOptions());
-      res.clearCookie(
-        AUTH_COOKIE_NAMES.refreshToken,
-        this.clearCookieOptions(),
-      );
+      res.clearCookie(AUTH_COOKIE_NAMES.refreshToken, this.clearCookieOptions());
 
       return res.status(204).send();
     } catch (err: unknown) {
@@ -167,10 +202,7 @@ export class UserController {
     try {
       await this.authService.logoutAll(req.auth.userId);
       res.clearCookie(AUTH_COOKIE_NAMES.accessToken, this.clearCookieOptions());
-      res.clearCookie(
-        AUTH_COOKIE_NAMES.refreshToken,
-        this.clearCookieOptions(),
-      );
+      res.clearCookie(AUTH_COOKIE_NAMES.refreshToken, this.clearCookieOptions());
 
       return res.status(204).send();
     } catch (err: unknown) {
@@ -188,12 +220,7 @@ export class UserController {
       const user = await this.platformService.signup(parsed.data);
 
       return res.status(201).json({
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          verified: user.isVerified,
-        },
+        user: this.toPublicUserFromAggregate(user),
       });
     } catch (err: unknown) {
       return errorHandler(err, res);
@@ -207,10 +234,7 @@ export class UserController {
         return invalidBody(res, parsed.error);
       }
 
-      await this.platformService.changeEmail(
-        Uuid.create(req.auth.userId),
-        parsed.data,
-      );
+      await this.platformService.changeEmail(Uuid.create(req.auth.userId), parsed.data);
       return res.status(204).send();
     } catch (err: unknown) {
       return errorHandler(err, res);
@@ -224,10 +248,7 @@ export class UserController {
         return invalidBody(res, parsed.error);
       }
 
-      await this.platformService.changePassword(
-        Uuid.create(req.auth.userId),
-        parsed.data,
-      );
+      await this.platformService.changePassword(Uuid.create(req.auth.userId), parsed.data);
       return res.status(204).send();
     } catch (err: unknown) {
       return errorHandler(err, res);
@@ -241,10 +262,7 @@ export class UserController {
         return invalidBody(res, parsed.error);
       }
 
-      await this.platformService.changeUsername(
-        Uuid.create(req.auth.userId),
-        parsed.data,
-      );
+      await this.platformService.changeUsername(Uuid.create(req.auth.userId), parsed.data);
       return res.status(204).send();
     } catch (err: unknown) {
       return errorHandler(err, res);
@@ -263,10 +281,7 @@ export class UserController {
         return invalidBody(res, parsedBody.error);
       }
 
-      await this.platformService.changeRole(
-        Uuid.create(parsedParams.data.id),
-        parsedBody.data,
-      );
+      await this.platformService.changeRole(Uuid.create(parsedParams.data.id), parsedBody.data);
       return res.status(204).send();
     } catch (err: unknown) {
       return errorHandler(err, res);
@@ -281,7 +296,10 @@ export class UserController {
       }
 
       const result = await this.listUsers.execute(parsed.data);
-      return res.status(200).json(result);
+      return res.status(200).json({
+        rows: result.rows.map((row) => this.toPublicUserFromListItem(row)),
+        total: result.total,
+      });
     } catch (err: unknown) {
       return errorHandler(err, res);
     }
@@ -360,7 +378,9 @@ export class UserController {
       }
 
       const user = await this.findUser.byId(Uuid.create(parsed.data.id));
-      return res.status(200).json(user);
+      return res.status(200).json({
+        user: this.toPublicUserFromAggregate(user),
+      });
     } catch (err: unknown) {
       return errorHandler(err, res);
     }
@@ -369,7 +389,9 @@ export class UserController {
   public me = async (req: Request, res: Response) => {
     try {
       const user = await this.findUser.byId(Uuid.create(req.auth.userId));
-      return res.status(200).json(user);
+      return res.status(200).json({
+        user: this.toPublicUserFromAggregate(user),
+      });
     } catch (err: unknown) {
       return errorHandler(err, res);
     }
@@ -383,7 +405,9 @@ export class UserController {
       }
 
       const user = await this.findUser.byEmail(Email.create(parsed.data.email));
-      return res.status(200).json(user);
+      return res.status(200).json({
+        user: this.toPublicUserFromAggregate(user),
+      });
     } catch (err: unknown) {
       return errorHandler(err, res);
     }
@@ -396,10 +420,10 @@ export class UserController {
         return invalidBody(res, parsed.error);
       }
 
-      const user = await this.findUser.byUsername(
-        Username.create(parsed.data.username),
-      );
-      return res.status(200).json(user);
+      const user = await this.findUser.byUsername(Username.create(parsed.data.username));
+      return res.status(200).json({
+        user: this.toPublicUserFromAggregate(user),
+      });
     } catch (err: unknown) {
       return errorHandler(err, res);
     }

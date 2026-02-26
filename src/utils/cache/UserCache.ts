@@ -1,5 +1,5 @@
 import { User, UserRole } from "../../domain/aggregates/User";
-import { ListUsersQuery } from "../../app/interfaces/User.port";
+import { ListUsersQuery, UserListItem } from "../../app/interfaces/User.port";
 import { TTL_MAP } from "../TTL.map";
 
 export type CachedUser = {
@@ -22,8 +22,25 @@ export type CachedUser = {
   role: UserRole;
 };
 
+export type CachedUserListItem = {
+  id: string;
+  email: string;
+  username: string;
+  role: string;
+  verified: boolean;
+  isDeleted: boolean;
+  isArchived: boolean;
+  isSupporter: boolean;
+  createdAt: string;
+  lastActivityAt: string;
+  verifiedAt: string | null;
+  deletedAt: string | null;
+  archivedAt: string | null;
+  supporterFrom: string | null;
+};
+
 export type CachedListUsersResult = {
-  rows: CachedUser[];
+  rows: CachedUserListItem[];
   total: number;
 };
 
@@ -37,10 +54,8 @@ const USERS_LIST_PREFIX = `${USERS_PREFIX}:list`;
 
 export const UserCacheKeys = {
   byId: (id: string): string => `${USERS_PREFIX}:by-id:${id}`,
-  byEmail: (email: string): string =>
-    `${USERS_PREFIX}:by-email:${email.trim().toLowerCase()}`,
-  byUsername: (username: string): string =>
-    `${USERS_PREFIX}:by-username:${username.trim()}`,
+  byEmail: (email: string): string => `${USERS_PREFIX}:by-email:${email.trim().toLowerCase()}`,
+  byUsername: (username: string): string => `${USERS_PREFIX}:by-username:${username.trim()}`,
   listPrefix: (): string => USERS_LIST_PREFIX,
   list: (query: ListUsersQuery): string =>
     `${USERS_LIST_PREFIX}:${JSON.stringify(normalizeListQuery(query))}`,
@@ -95,4 +110,28 @@ export function deserializeUserFromCache(cached: CachedUser): User {
     createdAt: new Date(cached.createdAt),
     role: cached.role,
   });
+}
+
+export function serializeUserListItemForCache(user: UserListItem): CachedUserListItem {
+  return {
+    ...user,
+    createdAt: user.createdAt.toISOString(),
+    lastActivityAt: user.lastActivityAt.toISOString(),
+    verifiedAt: user.verifiedAt ? user.verifiedAt.toISOString() : null,
+    deletedAt: user.deletedAt ? user.deletedAt.toISOString() : null,
+    archivedAt: user.archivedAt ? user.archivedAt.toISOString() : null,
+    supporterFrom: user.supporterFrom ? user.supporterFrom.toISOString() : null,
+  };
+}
+
+export function deserializeUserListItemFromCache(cached: CachedUserListItem): UserListItem {
+  return {
+    ...cached,
+    createdAt: new Date(cached.createdAt),
+    lastActivityAt: new Date(cached.lastActivityAt),
+    verifiedAt: cached.verifiedAt ? new Date(cached.verifiedAt) : null,
+    deletedAt: cached.deletedAt ? new Date(cached.deletedAt) : null,
+    archivedAt: cached.archivedAt ? new Date(cached.archivedAt) : null,
+    supporterFrom: cached.supporterFrom ? new Date(cached.supporterFrom) : null,
+  };
 }
