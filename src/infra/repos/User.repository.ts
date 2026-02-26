@@ -1,15 +1,8 @@
-import { IUser, ListUsersQuery } from "../../app/interfaces/User.port";
+import { IUser, ListUsersQuery, UserListItem } from "../../app/interfaces/User.port";
 import { Queryable, QueryResultRow } from "../../config/db/Queryable";
 import { paginateFrom } from "../../utils/Pagination";
 import { ErrorFactory } from "../../utils/errors/Error.map";
-import {
-  Email,
-  PasswordHash,
-  User,
-  Username,
-  UserRole,
-  Uuid,
-} from "../../domain/aggregates/User";
+import { Email, PasswordHash, User, Username, UserRole, Uuid } from "../../domain/aggregates/User";
 
 export default class UserRepo implements IUser {
   constructor(private readonly db: Queryable) {}
@@ -36,10 +29,7 @@ export default class UserRepo implements IUser {
     });
   }
 
-  private async findOneBy(
-    whereSql: string,
-    params: any[],
-  ): Promise<User | null> {
+  private async findOneBy(whereSql: string, params: any[]): Promise<User | null> {
     const sql = `
       SELECT
         u.id,
@@ -71,11 +61,29 @@ export default class UserRepo implements IUser {
     return this.mapRow(query.rows[0]);
   }
 
+  private mapRowToListItem(row: QueryResultRow): UserListItem {
+    return {
+      id: row.id,
+      email: row.email,
+      username: row.username,
+      role: row.role ?? "User",
+      verified: Boolean(row.is_verified),
+      isDeleted: Boolean(row.is_deleted),
+      isArchived: Boolean(row.is_archived),
+      isSupporter: Boolean(row.is_supporter),
+      createdAt: row.created_at,
+      lastActivityAt: row.last_activity_at ?? row.created_at,
+      verifiedAt: row.verified_at ?? null,
+      deletedAt: row.deleted_at ?? null,
+      archivedAt: row.archived_at ?? null,
+      supporterFrom: row.supporter_from ?? null,
+    };
+  }
+
   private async attachRole(user: User): Promise<void> {
-    const roleRes = await this.db.query(
-      `SELECT id FROM auth.roles WHERE key = $1 LIMIT 1`,
-      [user.role],
-    );
+    const roleRes = await this.db.query(`SELECT id FROM auth.roles WHERE key = $1 LIMIT 1`, [
+      user.role,
+    ]);
 
     if (roleRes.rowCount === 0) {
       throw ErrorFactory.infra("SHARED.NOT_FOUND", {
@@ -96,10 +104,9 @@ export default class UserRepo implements IUser {
   }
 
   private async syncRole(user: User): Promise<void> {
-    const roleRes = await this.db.query(
-      `SELECT id FROM auth.roles WHERE key = $1 LIMIT 1`,
-      [user.role],
-    );
+    const roleRes = await this.db.query(`SELECT id FROM auth.roles WHERE key = $1 LIMIT 1`, [
+      user.role,
+    ]);
 
     if (roleRes.rowCount === 0) {
       throw ErrorFactory.infra("SHARED.NOT_FOUND", {
@@ -131,10 +138,7 @@ export default class UserRepo implements IUser {
     const id = user.id.toString();
 
     // Check if exists
-    const exists = await this.db.query(
-      `SELECT 1 FROM auth.users WHERE id = $1`,
-      [id],
-    );
+    const exists = await this.db.query(`SELECT 1 FROM auth.users WHERE id = $1`, [id]);
 
     if (exists.rowCount === 0) {
       // INSERT
@@ -342,7 +346,7 @@ export default class UserRepo implements IUser {
     return this.save(user);
   }
 
-  async list(query: ListUsersQuery): Promise<{ rows: User[]; total: number }> {
+  async list(query: ListUsersQuery): Promise<{ rows: UserListItem[]; total: number }> {
     const params: any[] = [];
     const conditions: string[] = [];
 
@@ -356,9 +360,7 @@ export default class UserRepo implements IUser {
       conditions.push(`(u.email ILIKE ${idx} OR u.username ILIKE ${idx})`);
     }
 
-    const whereClause = conditions.length
-      ? `WHERE ${conditions.join(" AND ")}`
-      : "";
+    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const fromSql = `
       FROM auth.users u
@@ -382,11 +384,8 @@ export default class UserRepo implements IUser {
       select: `
           u.id,
           u.email,
-          u.hashed_password,
           u.username,
           u.is_verified,
-          u.verification_code,
-          u.verification_code_expires_at,
           u.verified_at,
           u.is_deleted,
           u.is_archived,
@@ -400,7 +399,7 @@ export default class UserRepo implements IUser {
         `,
     });
 
-    return { rows: rows.map((row: any) => this.mapRow(row)), total };
+    return { rows: rows.map((row) => this.mapRowToListItem(row)), total };
   }
 
   async verify(email: Email): Promise<void> {
@@ -461,10 +460,7 @@ export default class UserRepo implements IUser {
   }
 
   async touchActivity(id: Uuid, at?: Date): Promise<void> {
-    await this.db.query(
-      `SELECT auth_touch_user_activity($1, $2)`,
-      [id.toString(), at ?? null],
-    );
+    await this.db.query(`SELECT auth_touch_user_activity($1, $2)`, [id.toString(), at ?? null]);
   }
 
   async archiveInactive(

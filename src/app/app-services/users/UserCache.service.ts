@@ -1,13 +1,15 @@
 import { User } from "../../../domain/aggregates/User";
 import { ICache } from "../../interfaces/Cache.port";
-import { ListUsersQuery } from "../../interfaces/User.port";
+import { ListUsersQuery, UserListItem } from "../../interfaces/User.port";
 import {
   CachedUser,
   CachedListUsersResult,
   UserCacheKeys,
   USER_CACHE_POLICY,
   deserializeUserFromCache,
+  deserializeUserListItemFromCache,
   serializeUserForCache,
+  serializeUserListItemForCache,
 } from "../../../utils/cache/UserCache";
 
 type UserIdentitySnapshot = {
@@ -61,15 +63,13 @@ export class UserCacheService {
     }
   }
 
-  async getList(
-    query: ListUsersQuery,
-  ): Promise<{ rows: User[]; total: number } | null> {
+  async getList(query: ListUsersQuery): Promise<{ rows: UserListItem[]; total: number } | null> {
     try {
       const key = UserCacheKeys.list(query);
       const cached = await this.cache.get<CachedListUsersResult>(key);
       if (!cached) return null;
       return {
-        rows: cached.rows.map((row) => deserializeUserFromCache(row)),
+        rows: cached.rows.map((row) => deserializeUserListItemFromCache(row)),
         total: cached.total,
       };
     } catch {
@@ -79,19 +79,15 @@ export class UserCacheService {
 
   async setList(
     query: ListUsersQuery,
-    result: { rows: User[]; total: number },
+    result: { rows: UserListItem[]; total: number },
   ): Promise<void> {
     const payload: CachedListUsersResult = {
-      rows: result.rows.map((row) => serializeUserForCache(row)),
+      rows: result.rows.map((row) => serializeUserListItemForCache(row)),
       total: result.total,
     };
 
     try {
-      await this.cache.set(
-        UserCacheKeys.list(query),
-        payload,
-        USER_CACHE_POLICY.usersListTtl,
-      );
+      await this.cache.set(UserCacheKeys.list(query), payload, USER_CACHE_POLICY.usersListTtl);
     } catch {
       return;
     }

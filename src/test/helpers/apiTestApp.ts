@@ -65,6 +65,27 @@ class FakeJwt implements IJWT {
 const asId = (value: string | { toString(): string }): string => value.toString();
 const asName = (value: string | { toString(): string }): string => value.toString();
 
+function buildMockUser(input?: Partial<Record<string, unknown>>) {
+  const base = {
+    id: IDS.userA,
+    email: "a@test.com",
+    username: "user_a",
+    role: "User",
+    isVerified: true,
+    isDeleted: false,
+    isArchived: false,
+    isSupporter: false,
+    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    lastActivityAt: new Date("2026-01-02T00:00:00.000Z"),
+    verifiedAt: new Date("2026-01-01T00:05:00.000Z"),
+    deletedAt: null,
+    archivedAt: null,
+    supporterFrom: null,
+  };
+
+  return { ...base, ...(input ?? {}) };
+}
+
 export function makeAuthHeader(userId: string, role: "Admin" | "User"): string {
   return `Bearer ${userId}|${role}`;
 }
@@ -78,8 +99,14 @@ export function buildTestApi(): {
     [IDS.galaxyB, { id: IDS.galaxyB, ownerId: IDS.userB, name: "BetaPrime", shape: "irregular" }],
   ]);
   const systems = new Map<string, SystemEntity>([
-    [IDS.systemA, { id: IDS.systemA, galaxyId: IDS.galaxyA, name: "A-System", x: 10, y: 20, z: 30 }],
-    [IDS.systemB, { id: IDS.systemB, galaxyId: IDS.galaxyB, name: "B-System", x: 15, y: 25, z: 35 }],
+    [
+      IDS.systemA,
+      { id: IDS.systemA, galaxyId: IDS.galaxyA, name: "A-System", x: 10, y: 20, z: 30 },
+    ],
+    [
+      IDS.systemB,
+      { id: IDS.systemB, galaxyId: IDS.galaxyB, name: "B-System", x: 15, y: 25, z: 35 },
+    ],
   ]);
   const stars = new Map<string, StarEntity>([
     [IDS.starA, { id: IDS.starA, systemId: IDS.systemA, name: "StarA" }],
@@ -103,16 +130,16 @@ export function buildTestApi(): {
       execute: jest.fn(async () => ({ service: "auth", status: "ok" })),
     },
     findUser: {
-      byId: jest.fn(async () => ({ id: IDS.userA, email: "a@test.com" })),
-      byEmail: jest.fn(async () => null),
-      byUsername: jest.fn(async () => null),
+      byId: jest.fn(async () => buildMockUser()),
+      byEmail: jest.fn(async () => buildMockUser()),
+      byUsername: jest.fn(async () => buildMockUser()),
     },
     listUsers: {
       execute: jest.fn(async () => ({ rows: [], total: 0 })),
     },
     authService: {
       login: jest.fn(async () => ({
-        user: { id: IDS.userA, email: "a@test.com", role: "User", isVerified: true },
+        user: buildMockUser(),
         accessToken: "a",
         refreshToken: "b",
       })),
@@ -122,7 +149,7 @@ export function buildTestApi(): {
       logoutAll: jest.fn(async () => undefined),
     },
     platformService: {
-      signup: jest.fn(async () => ({ id: IDS.userA, email: "a@test.com", role: "User", isVerified: false })),
+      signup: jest.fn(async () => buildMockUser({ isVerified: false, verifiedAt: null })),
       changeEmail: jest.fn(async () => undefined),
       changePassword: jest.fn(async () => undefined),
       changeUsername: jest.fn(async () => undefined),
@@ -135,12 +162,19 @@ export function buildTestApi(): {
       restore: jest.fn(async () => undefined),
     },
     createGalaxy: {
-      execute: jest.fn(async (payload: { ownerId: string; name: string; shape?: string; systemCount: number }) => ({
-        id: IDS.galaxyA,
-        ownerId: payload.ownerId,
-        name: payload.name,
-        shape: payload.shape ?? "spherical",
-      })),
+      execute: jest.fn(
+        async (payload: {
+          ownerId: string;
+          name: string;
+          shape?: string;
+          systemCount: number;
+        }) => ({
+          id: IDS.galaxyA,
+          ownerId: payload.ownerId,
+          name: payload.name,
+          shape: payload.shape ?? "spherical",
+        }),
+      ),
     },
     changeGalaxyName: { execute: jest.fn(async () => undefined) },
     changeGalaxyShape: { execute: jest.fn(async () => undefined) },
@@ -171,8 +205,11 @@ export function buildTestApi(): {
         const n = asName(name);
         return Array.from(systems.values()).find((s) => s.name === n) ?? null;
       }),
-      byPosition: jest.fn(async (input: { x: number; y: number; z: number }) =>
-        Array.from(systems.values()).find((s) => s.x === input.x && s.y === input.y && s.z === input.z) ?? null,
+      byPosition: jest.fn(
+        async (input: { x: number; y: number; z: number }) =>
+          Array.from(systems.values()).find(
+            (s) => s.x === input.x && s.y === input.y && s.z === input.z,
+          ) ?? null,
       ),
     },
     listSystemsByGalaxy: {
